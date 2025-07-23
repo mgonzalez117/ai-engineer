@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "ai-engineer_p2"
+version = "0.1.0"
+description = "AI Engineer - Requêtez des services IA "
+authors = ["Michaël Gonzalez <cyberalternative@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+jupyterlab = "^4.0.0"
+numpy = "^2.3.1"
+matplotlib = "^3.10.3"
+requests = "^2.32.4"
+pillow = "^11.3.0"
+tqdm = "^4.67.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
