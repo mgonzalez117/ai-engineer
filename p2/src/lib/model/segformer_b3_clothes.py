@@ -84,6 +84,7 @@ def request_for_image(path, api_token):
             )
 
             print(f'Api Response HTTP Code: {response.status_code}')
+            response.raise_for_status()  # Lève une exception si status >= 400
             computed_image = response.json()
 
     except Exception as e:
