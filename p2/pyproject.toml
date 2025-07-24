@@ -12,6 +12,7 @@ matplotlib = "^3.10.3"
 requests = "^2.32.4"
 pillow = "^11.3.0"
 tqdm = "^4.67.1"
+dotenv = "^0.9.9"
 
 [build-system]
 requires = ["poetry-core"]
