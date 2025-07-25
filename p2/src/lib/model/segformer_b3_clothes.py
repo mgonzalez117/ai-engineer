@@ -170,10 +170,10 @@ def segment_images_batch(image_paths, api_token, max):
     images_to_process = image_paths[:max]
 
     # LA BARRE DE PROGRESSION SE CRÉE ICI ↓
-    for path in tqdm(images_to_process, desc="🟢 Segmentation", unit="img"):
+    for path in tqdm(images_to_process, desc="🟢 Optimization & Segmentation", unit="img"):
+        optimize_image(path, max_size=(400, 600), quality=70)
         image_response = request_for_image(path, api_token)
 
-        original_img = Image.open(path).convert("RGB")
         width, height = get_image_dimensions(path)
         final_mask = create_masks(image_response, width, height)
 
@@ -186,3 +186,46 @@ def segment_images_batch(image_paths, api_token, max):
         time.sleep(0.5)
 
     return batch_segmentations
+
+
+from PIL import Image
+import os
+
+def optimize_image(image_path, max_size=(400, 600), quality=80):
+    """
+    Optimise une image (JPEG, JPG ou PNG) en la redimensionnant et en la compressant.
+    L'image optimisée remplace l'image originale.
+
+    Args:
+        image_path (str): Chemin vers l'image à optimiser
+        max_size (tuple): Taille maximale (largeur, hauteur) en pixels
+        quality (int): Qualité JPEG (1-100, ignoré pour PNG)
+
+    Returns:
+        str: Chemin de l'image optimisée (identique à l'entrée)
+    """
+    # Ouvre l'image
+    img = Image.open(image_path)
+
+    # Vérifie si l'image dépasse la taille maximale
+    if img.width <= max_size[0] and img.height <= max_size[1]:
+        print(f"Image {image_path} déjà optimisée ({img.width}x{img.height})")
+        return image_path
+
+    print(f"Redimensionnement de {img.width}x{img.height} vers max {max_size}")
+
+    # Redimensionne en gardant le ratio
+    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+
+    # Détermine le format basé sur l'extension
+    _, ext = os.path.splitext(image_path.lower())
+
+    if ext in ['.jpg', '.jpeg']:
+        # Sauvegarde en JPEG avec compression
+        img = img.convert('RGB')  # Assure la compatibilité JPEG
+        img.save(image_path, format='JPEG', quality=quality, optimize=True)
+    elif ext == '.png':
+        # Sauvegarde en PNG avec compression
+        img.save(image_path, format='PNG', optimize=True, compress_level=9)
+
+    return image_path
