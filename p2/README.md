@@ -41,7 +41,9 @@ permet déjà l'isolation des couches applicatives.
 ### Fichiers source et Notebook
 
 Les fichiers source sont exposés dans le répertoire `src/`. 
-J'y ai repris le notebook de l'exercice pour le modifier d'après les besoins.
+J'y ai repris le notebook de l'exercice pour le modifier d'après les besoins : 
+
+* `src/huggingface_api_cloth_seg.ipynb`
 
 J'ai extrait la plus grande partie du code source dans le dossier `lib/`, vous y trouverez : 
 
