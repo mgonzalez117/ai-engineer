@@ -6,6 +6,8 @@ import base64
 from PIL import Image
 import io
 import time
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 API_URL = "https://api-inference.huggingface.co/models/sayeed99/segformer_b3_clothes"
 
@@ -229,3 +231,87 @@ def optimize_image(image_path, max_size=(400, 600), quality=80):
         img.save(image_path, format='PNG', optimize=True, compress_level=9)
 
     return image_path
+
+def create_colored_masks_with_legend(masks, ax=None, show_legend=True):
+    """
+    Crée des masques colorés avec légende à partir des données de masques.
+
+    Args:
+        masks: Array numpy contenant les masques avec les IDs de classes
+        ax: Axe matplotlib pour afficher la légende (optionnel)
+        show_legend: Boolean pour afficher ou non la légende
+
+    Returns:
+        colored_masks: Array numpy des masques colorés (RGBA)
+        patches: Liste des patches pour la légende
+    """
+    ID_TO_LABEL = {v: k for k, v in CLASS_MAPPING.items()}
+
+    # Créer les masques colorés
+    colored_masks = np.zeros((*masks.shape, 4))
+    present_ids = [id for id in np.unique(masks) if id != 0]
+
+    for class_id in present_ids:
+        mask_positions = masks == class_id
+        colored_masks[mask_positions] = COLOR_MAPPING[class_id]
+
+    # Créer les patches pour la légende
+    patches = []
+    if present_ids:
+        for class_id in sorted(present_ids):
+            color = COLOR_MAPPING[class_id]
+            label = ID_TO_LABEL.get(class_id, str(class_id))
+            patches.append(mpatches.Patch(color=color, label=label))
+
+    # Ajouter la légende si un axe est fourni
+    if ax is not None and show_legend and patches:
+        ax.legend(handles=patches, loc='lower right', frameon=True,
+                  fancybox=True, shadow=True, fontsize='small')
+
+    return colored_masks, patches
+
+
+def save_masks_with_legend(image_paths, masks_data, output_dir="masks_output", max_images=0):
+    """
+    Liste les images et sauvegarde les masques seuls avec légende dans un dossier local.
+
+    Args:
+        image_paths: Liste des chemins vers les images
+        masks_data: Liste des données de masques correspondantes
+        output_dir: Dossier de sortie pour sauvegarder les masques
+        max_images: Nombre maximum d'images à traiter (0 = toutes)
+    """
+    # Créer le dossier de sortie s'il n'existe pas
+    os.makedirs(output_dir, exist_ok=True)
+
+    if max_images == 0:
+        max_images = len(image_paths)
+
+    print(f"Traitement de {min(max_images, len(image_paths))} images...")
+    print(f"Sauvegarde dans le dossier: {output_dir}")
+
+    for i, (image_path, masks) in enumerate(zip(image_paths[:max_images], masks_data[:max_images])):
+        print(f"Traitement de l'image {i + 1}/{min(max_images, len(image_paths))}: {os.path.basename(image_path)}")
+
+        # Créer une figure pour le masque seul
+        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+
+        # Utiliser la fonction extraite pour créer les masques colorés avec légende
+        colored_masks, patches = create_colored_masks_with_legend(masks, ax, show_legend=True)
+
+        # Afficher les masques
+        ax.imshow(colored_masks)
+        ax.set_title(f"Masques - {os.path.basename(image_path)}")
+        ax.axis('off')
+
+        # Sauvegarder l'image
+        output_filename = f"mask_{os.path.splitext(os.path.basename(image_path))[0]}.png"
+        output_path = os.path.join(output_dir, output_filename)
+
+        plt.tight_layout()
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"  → Sauvegardé: {output_filename}")
+
+    print(f"\nTerminé! {min(max_images, len(image_paths))} masques sauvegardés dans '{output_dir}'")
