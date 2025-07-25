@@ -10,7 +10,6 @@ WORKDIR /workspace
 
 COPY pyproject.toml poetry.lock* ./
 
-# Ajoute --no-root ici !
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-root
 
