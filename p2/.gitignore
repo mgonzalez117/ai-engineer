@@ -2,3 +2,5 @@
 .Trash-0/
 .env
 src/.ipynb_checkpoints/
+src/lib/__pycache__/
+src/lib/model/__pycache__/

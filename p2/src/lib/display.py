@@ -67,12 +67,12 @@ def display_legend(masks, ax=None):
         plt.show()
 
 
-def display_images_grid(image_paths, masks_data):
+def display_images_grid(image_paths, masks_data, max):
     """
     Affiche les images, les masques seuls, et les masques superposés dans une grille avec légende globale.
     """
     images_data = []
-    for path in image_paths:
+    for path in image_paths[:max]:
         img = Image.open(path)
         img_array = np.array(img)
         images_data.append(img_array)

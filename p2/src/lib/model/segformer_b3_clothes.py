@@ -152,21 +152,25 @@ def create_masks(results, width, height):
 
 
 
-def segment_images_batch(image_paths, api_token):
+def segment_images_batch(image_paths, api_token, max):
     """
     Segmente une liste d'images en utilisant l'API Hugging Face.
 
     Args:
         image_paths (list): Liste des chemins vers les images.
-
+        api_token (str): API Token.
+        max (int): Maximum d'images à traiter via l'api
     Returns:
         list: Liste des masques de segmentation (tableaux NumPy).
               Contient None si une image n'a pas pu être traitée.
     """
     batch_segmentations = []
 
+    # Limiter le nombre d'images à traiter
+    images_to_process = image_paths[:max]
+
     # LA BARRE DE PROGRESSION SE CRÉE ICI ↓
-    for path in tqdm(image_paths, desc="🟢 Segmentation", unit="img"):
+    for path in tqdm(images_to_process, desc="🟢 Segmentation", unit="img"):
         image_response = request_for_image(path, api_token)
 
         original_img = Image.open(path).convert("RGB")
