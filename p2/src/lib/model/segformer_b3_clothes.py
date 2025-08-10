@@ -8,6 +8,7 @@ import io
 import time
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import cv2
 
 API_URL = "https://api-inference.huggingface.co/models/sayeed99/segformer_b3_clothes"
 
@@ -271,7 +272,7 @@ def create_colored_masks_with_legend(masks, ax=None, show_legend=True):
     return colored_masks, patches
 
 
-def save_masks_with_legend(image_paths, masks_data, output_dir="masks_output", max_images=0):
+def save_generated_masks(image_paths, masks_data, output_dir="masks_output", max_images=0):
     """
     Liste les images et sauvegarde les masques seuls avec légende dans un dossier local.
 
@@ -293,24 +294,20 @@ def save_masks_with_legend(image_paths, masks_data, output_dir="masks_output", m
     for i, (image_path, masks) in enumerate(zip(image_paths[:max_images], masks_data[:max_images])):
         print(f"Traitement de l'image {i + 1}/{min(max_images, len(image_paths))}: {os.path.basename(image_path)}")
 
-        # Créer une figure pour le masque seul
-        fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+        # Si le masque possède 3 canaux, le convertir en niveaux de gris
+        if masks.ndim == 3:
+            masks = cv2.cvtColor(masks, cv2.COLOR_BGR2GRAY)
 
-        # Utiliser la fonction extraite pour créer les masques colorés avec légende
-        colored_masks, patches = create_colored_masks_with_legend(masks, ax, show_legend=True)
+        # Extraire le nom de base et retirer le préfixe "image_" s'il existe
+        base_name = os.path.splitext(os.path.basename(image_path))[0]
+        base_name = base_name.removeprefix("image_")
+        output_filename = f"mask_{base_name}.png"
 
-        # Afficher les masques
-        ax.imshow(colored_masks)
-        ax.set_title(f"Masques - {os.path.basename(image_path)}")
-        ax.axis('off')
-
-        # Sauvegarder l'image
-        output_filename = f"mask_{os.path.splitext(os.path.basename(image_path))[0]}.png"
+        # Sauvegarder le masque
         output_path = os.path.join(output_dir, output_filename)
 
-        plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
-        plt.close()
+        # Sauvegarder le masque avec cv2
+        cv2.imwrite(output_path, masks)
 
         print(f"  → Sauvegardé: {output_filename}")
 
