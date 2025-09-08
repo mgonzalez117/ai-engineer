@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "ai-engineer_p4"
+version = "0.1.0"
+description = "AI Engineer - Classifiez automatiquement des informations"
+authors = ["Michaël Gonzalez <cyberalternative@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.13"
+jupyterlab = "^4.0.0"
