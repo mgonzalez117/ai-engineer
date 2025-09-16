@@ -1,4 +1,4 @@
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, precision_recall_curve, average_precision_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.model_selection import cross_val_predict
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -40,23 +40,4 @@ def display_confusion_matrix(model, X, y, cv):
     cm = confusion_matrix(y, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot(cmap="Blues")
-    plt.show()
-
-def display_precision_recall_curve(model, X, y, cv):
-    # Probabilités prédites en cross-validation (classe positive = 1)
-    y_scores = cross_val_predict(model, X, y, cv=cv, method="predict_proba")[:, 1]
-
-    # Courbe précision-rappel
-    precision, recall, thresholds = precision_recall_curve(y, y_scores)
-    avg_precision = average_precision_score(y, y_scores)
-
-    # Tracé
-    plt.figure(figsize=(7, 5))
-    plt.plot(recall, precision, label=f'AP = {avg_precision:.2f}')
-    plt.xlabel("Rappel (Recall)")
-    plt.ylabel("Précision")
-    plt.title("Courbe Précision–Rappel (cross-validation)")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
     plt.show()
