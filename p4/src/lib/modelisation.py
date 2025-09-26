@@ -8,18 +8,20 @@ from sklearn.model_selection import cross_val_predict
 def display_cross_validate_results(cv_results):
     # Créer un DataFrame avec les métriques
     metrics_df = pd.DataFrame({
-        'Métrique': ['Accuracy', 'Precision', 'Recall', 'F1-score'],
+        'Métrique': ['Accuracy', 'Precision', 'Recall', 'F1-score', 'ROC-AUC'],
         'Moyenne': [
             cv_results['test_accuracy'].mean(),
             cv_results['test_precision'].mean(),
             cv_results['test_recall'].mean(),
-            cv_results['test_f1'].mean()
+            cv_results['test_f1'].mean(),
+            cv_results['test_roc_auc'].mean()
         ],
         'Écart-type': [
             cv_results['test_accuracy'].std(),
             cv_results['test_precision'].std(),
             cv_results['test_recall'].std(),
-            cv_results['test_f1'].std()
+            cv_results['test_f1'].std(),
+            cv_results['test_roc_auc'].mean()
         ]
     })
 
