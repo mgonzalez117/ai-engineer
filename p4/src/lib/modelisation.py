@@ -27,9 +27,7 @@ class NormalizationPreprocessingTransformer(BaseEstimator, TransformerMixin):
     
     def normalize_note(self, x):
         """Normalise les notes (à adapter selon ta logique)"""
-        # Ajoute ici ta logique de normalisation des notes
-        # Par exemple : diviser par 5 si notes sur 5
-        return x  # remplace par ta logique
+        return round((x - 1) / (4 - 1), 3)
     
     def fit(self, X, y=None):
         # Rien à apprendre ici
