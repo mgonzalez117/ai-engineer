@@ -1,0 +1,9 @@
+[tool.poetry]
+name = "ai-engineer_p6"
+version = "0.1.0"
+description = "AI Engineer - Initiation au MLOps"
+authors = ["Michaël Gonzalez <cyberalternative@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.13"

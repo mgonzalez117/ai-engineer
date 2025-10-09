@@ -14,3 +14,17 @@ services:
       --port 5000
       --backend-store-uri file:///mlflow/mlruns
       --default-artifact-root file:///mlflow/mlartifacts
+
+  python:
+    container_name: python
+    build: Dockerfile
+    volumes:
+      - ./:/app
+    working_dir: /app
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
+    stdin_open: true
+    tty: true
+    command: /bin/bash
