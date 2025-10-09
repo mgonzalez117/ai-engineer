@@ -15,16 +15,18 @@ services:
       --backend-store-uri file:///mlflow/mlruns
       --default-artifact-root file:///mlflow/mlartifacts
 
-  python:
-    container_name: python
-    build: Dockerfile
-    volumes:
-      - ./:/app
-    working_dir: /app
+  jupyter:
+    container_name: jupyter
+    build: .
+    working_dir: /workspace
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8888:8888"
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
     depends_on:
       - mlflow
     stdin_open: true
     tty: true
-    command: /bin/bash
