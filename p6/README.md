@@ -18,3 +18,19 @@ de lancer le container pour ce projet. une fois le container lancé vous pouvez 
 
 * MLFlow : `127.0.0.1:5000`
 
+### Modélisation
+
+# Pré-requis : Analyse & Préparation
+
+J'ai réutilisé en partie le kernel `https://www.kaggle.com/code/willkoehrsen/start-here-a-gentle-introduction/notebook`, il comprend : 
+* une analyse des données
+* le nettoyage
+* l'encodage et la normalisation
+* quelques features (car le jeu de données `application_test.csv` est déjà en partie un regroupement de features)
+
+**Il est nécessaire d'exécuter ce notebook**, un nouveau fichier résultant est créé pour la modélisation, il nous servira tout au long de nos expérimentations : 
+* `./data/modelisation/app_train.csv`
+
+# Expérimentations
+
+Utiliser le notebbok `src/2-experimentations`, il permet de lancer les essais sur MLFlow localement.
