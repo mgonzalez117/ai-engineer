@@ -2,10 +2,6 @@
 Tests unitaires pour le module test_chunking.py
 """
 import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
 import pytest
 from src.data.chunking import create_chunks_from_event, CHUNK_SIZE, CHUNK_OVERLAP
 

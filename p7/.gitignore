@@ -1,4 +1,4 @@
 .idea/
-.env.dist
+.env
 .ragdata/
 __pycache__

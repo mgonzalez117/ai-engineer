@@ -4,14 +4,11 @@ import faiss
 import numpy as np
 import pickle
 import requests
-from mistralai import Mistral
-from mistralai.models import SDKError
 from src.data.chunking import create_chunks_from_event
+from sentence_transformers import SentenceTransformer
 
 # Configuration depuis les variables d'environnement
 INDEX_DIR = os.getenv('INDEX_DIR')
-MISTRAL_TOKEN = os.getenv('MISTRAL_TOKEN')  # clé standard
-MISTRAL_EMB_MODEL = os.getenv('MISTRAL_EMB_MODEL', 'mistral-embed')
 API = os.getenv('OPENDATASOFT_URL')
 API_DATASET = os.getenv('OPENDATASOFT_DATASET')
 FILTER_DEPARTMENT = os.getenv('FILTER_DEPARTMENT')
@@ -98,25 +95,11 @@ def build_index():
     # Extraire les textes pour l'embedding
     texts = [chunk['text'] for chunk in all_chunks]
 
-    print(f"Génération des embeddings via Mistral ({MISTRAL_EMB_MODEL})...")
-    all_embeddings = []
-    used_model = f"mistral:{MISTRAL_EMB_MODEL}"
-
-    try:
-        with Mistral(api_key=MISTRAL_TOKEN) as client:
-            for texts_batch in batch_iter(texts, 32):  # minimalisme et prudence
-                res = client.embeddings.create(model=MISTRAL_EMB_MODEL, inputs=texts_batch)
-                all_embeddings.extend([d.embedding for d in res.data])
-    except SDKError as e:
-        if "service_tier_capacity_exceeded" in str(e) or "Status 429" in str(e):
-            print("Capacité Mistral saturée (429). Fallback embeddings local pour terminer le build.")
-            from sentence_transformers import SentenceTransformer
-            local_model_name = os.getenv('FALLBACK_EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
-            used_model = f"local:{local_model_name}"
-            model = SentenceTransformer(local_model_name)
-            all_embeddings = model.encode(texts, show_progress_bar=True)
-        else:
-            raise
+    print(f"Génération des embeddings...")
+    local_model_name = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
+    used_model = f"local:{local_model_name}"
+    model = SentenceTransformer(local_model_name)
+    all_embeddings = model.encode(texts, show_progress_bar=True)
 
     embeddings = np.array(all_embeddings, dtype='float32')
     print(f"Embeddings générés avec: {used_model}")
