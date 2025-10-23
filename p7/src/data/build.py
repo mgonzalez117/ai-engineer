@@ -111,7 +111,7 @@ def build_index():
         if "service_tier_capacity_exceeded" in str(e) or "Status 429" in str(e):
             print("Capacité Mistral saturée (429). Fallback embeddings local pour terminer le build.")
             from sentence_transformers import SentenceTransformer
-            local_model_name = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
+            local_model_name = os.getenv('FALLBACK_EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
             used_model = f"local:{local_model_name}"
             model = SentenceTransformer(local_model_name)
             all_embeddings = model.encode(texts, show_progress_bar=True)
