@@ -18,5 +18,6 @@ services:
       FILTER_YEAR: ${FILTER_YEAR}
       EMB_MODEL: ${EMB_MODEL}
       MISTRAL_TOKEN: ${MISTRAL_TOKEN}
+      PROMPT_FILE: ${PROMPT_FILE}
     stdin_open: true
     tty: true

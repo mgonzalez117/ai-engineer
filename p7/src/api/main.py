@@ -7,14 +7,14 @@ from fastapi.responses import RedirectResponse
 from starlette.status import HTTP_401_UNAUTHORIZED
 import os
 import secrets
-from src.api import rebuild
+from src.api import ask, rebuild
 
 API_TOKEN = os.getenv("API_TOKEN")
 security = HTTPBearer()
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        public_paths = ["/", "/status", "/docs", "/openapi.json", "/redoc"]
+        public_paths = ["/", "/ask", "/status", "/docs", "/openapi.json", "/redoc"]
 
         if request.url.path in public_paths:
             return await call_next(request)
@@ -50,6 +50,7 @@ app = FastAPI(
     description="Recherche d'évènements publics depuis OpenAgenda",
     version="1.0.0"
 )
+app.include_router(ask.router)
 app.include_router(rebuild.router)
 app.add_middleware(AuthMiddleware)
 
