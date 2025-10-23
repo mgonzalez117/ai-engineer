@@ -8,13 +8,15 @@ services:
     ports:
       - '${API_PORT}:80'
     environment:
+      PYTHONPATH: /app
       API_URL: 'http://127.0.0.1:80'
       API_TOKEN: ${API_TOKEN}
-      INDEX_DIR: .ragdata/index/faiss_var_2025
-      EMB_MODEL: sentence-transformers/all-MiniLM-L6-v2
-      OPENDATASOFT_URL: 'https://public.opendatasoft.com/api/records/1.0/search/'
-      OPENDATASOFT_DATASET: 'evenements-publics-openagenda'
-      FILTER_DEPARTMENT: Var
-      FILTER_YEAR: 2025
+      INDEX_DIR: ${INDEX_DIR}
+      OPENDATASOFT_URL: ${OPENDATASOFT_URL}
+      OPENDATASOFT_DATASET: ${OPENDATASOFT_DATASET}
+      FILTER_DEPARTMENT: ${FILTER_DEPARTMENT}
+      FILTER_YEAR: ${FILTER_YEAR}
+      MISTRAL_TOKEN: ${MISTRAL_TOKEN}
+      MISTRAL_EMB_MODEL: ${MISTRAL_EMB_MODEL}
     stdin_open: true
     tty: true

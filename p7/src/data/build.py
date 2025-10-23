@@ -2,14 +2,16 @@ import os
 import pandas as pd
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
 import pickle
 import requests
+from mistralai import Mistral
+from mistralai.models import SDKError
 from src.data.chunking import create_chunks_from_event
 
 # Configuration depuis les variables d'environnement
 INDEX_DIR = os.getenv('INDEX_DIR')
-EMB_MODEL = os.getenv('EMB_MODEL')
+MISTRAL_TOKEN = os.getenv('MISTRAL_TOKEN')  # clé standard
+MISTRAL_EMB_MODEL = os.getenv('MISTRAL_EMB_MODEL', 'mistral-embed')
 API = os.getenv('OPENDATASOFT_URL')
 API_DATASET = os.getenv('OPENDATASOFT_DATASET')
 FILTER_DEPARTMENT = os.getenv('FILTER_DEPARTMENT')
@@ -19,13 +21,14 @@ FILTER_YEAR = os.getenv('FILTER_YEAR')
 INDEX_PATH = os.path.join(INDEX_DIR, 'index.faiss')
 METADATA_PATH = os.path.join(INDEX_DIR, 'metadata.pkl')
 
+BATCH_SIZE = 128
+
+def batch_iter(iterable, n):
+    for i in range(0, len(iterable), n):
+        yield iterable[i:i+n]
 
 def fetch_all_events():
-    """Récupère tous les événements depuis l'API OpenAgenda (Opendatasoft)
-
-    Returns:
-        pd.DataFrame: DataFrame de tous les événements
-    """
+    """Récupère tous les événements depuis l'API OpenAgenda (Opendatasoft)"""
     params = {
         'dataset': API_DATASET,
         'rows': 1000,
@@ -67,7 +70,6 @@ def fetch_all_events():
         params['start'] += params['rows']
 
     print(f"Total récupéré : {len(all_events)} événements")
-
     return pd.DataFrame(all_events)
 
 
@@ -86,7 +88,7 @@ def build_index():
 
     # Créer les chunks pour chaque événement
     all_chunks = []
-    for idx, event in df.iterrows():
+    for _, event in df.iterrows():
         event_dict = event.to_dict()
         chunks = create_chunks_from_event(event_dict)
         all_chunks.extend(chunks)
@@ -96,12 +98,28 @@ def build_index():
     # Extraire les textes pour l'embedding
     texts = [chunk['text'] for chunk in all_chunks]
 
-    print(f"Chargement du modèle {EMB_MODEL}...")
-    model = SentenceTransformer(EMB_MODEL)
+    print(f"Génération des embeddings via Mistral ({MISTRAL_EMB_MODEL})...")
+    all_embeddings = []
+    used_model = f"mistral:{MISTRAL_EMB_MODEL}"
 
-    print("Génération des embeddings...")
-    embeddings = model.encode(texts, show_progress_bar=True)
-    embeddings = np.array(embeddings).astype('float32')
+    try:
+        with Mistral(api_key=MISTRAL_TOKEN) as client:
+            for texts_batch in batch_iter(texts, 32):  # minimalisme et prudence
+                res = client.embeddings.create(model=MISTRAL_EMB_MODEL, inputs=texts_batch)
+                all_embeddings.extend([d.embedding for d in res.data])
+    except SDKError as e:
+        if "service_tier_capacity_exceeded" in str(e) or "Status 429" in str(e):
+            print("Capacité Mistral saturée (429). Fallback embeddings local pour terminer le build.")
+            from sentence_transformers import SentenceTransformer
+            local_model_name = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
+            used_model = f"local:{local_model_name}"
+            model = SentenceTransformer(local_model_name)
+            all_embeddings = model.encode(texts, show_progress_bar=True)
+        else:
+            raise
+
+    embeddings = np.array(all_embeddings, dtype='float32')
+    print(f"Embeddings générés avec: {used_model}")
 
     dimension = embeddings.shape[1]
     index = faiss.IndexFlatL2(dimension)
