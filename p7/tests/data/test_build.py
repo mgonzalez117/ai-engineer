@@ -61,30 +61,39 @@ def test_fetch_all_events_api_error(mock_get):
 
 
 @patch('src.data.build.fetch_all_events')
-@patch('src.data.build.SentenceTransformer')
 @patch('src.data.build.faiss.write_index')
 @patch('builtins.open', create=True)
-def test_build_index_with_events(mock_open, mock_faiss_write, mock_model, mock_fetch):
-    """Test construction de l'index avec des événements"""
+@patch('src.data.build.Mistral')
+def test_build_index_with_events(mock_mistral, mock_open, mock_faiss_write, mock_fetch):
+    """Test construction de l'index avec des événements (Mistral mocké)"""
+    # Données d'événements simulées
     mock_fetch.return_value = pd.DataFrame([
         {'uid': '1', 'title_fr': 'Event 1', 'longdescription_fr': 'Description 1'}
     ])
 
-    mock_model_instance = MagicMock()
-    mock_model_instance.encode.return_value = np.array([[0.1, 0.2, 0.3]])
-    mock_model.return_value = mock_model_instance
+    # Préparer le client Mistral mocké
+    fake_vec = np.array([0.1, 0.2, 0.3], dtype='float32').tolist()
+    mock_client = MagicMock()
+    mock_client.__enter__.return_value = mock_client
+    mock_client.embeddings.create.return_value = MagicMock(
+        data=[MagicMock(embedding=fake_vec)]
+    )
+    mock_mistral.return_value = mock_client
 
+    # Exécuter
     build_index()
 
-    mock_model_instance.encode.assert_called_once()
+    # Vérifications de base: appel embeddings, écriture de l'index
+    mock_client.embeddings.create.assert_called_once()
     mock_faiss_write.assert_called_once()
 
 
 @patch('src.data.build.fetch_all_events')
-def test_build_index_no_events(mock_fetch):
+@patch('src.data.build.Mistral')
+def test_build_index_no_events(mock_mistral, mock_fetch):
     """Test construction de l'index sans événements"""
     mock_fetch.return_value = pd.DataFrame()
-
     build_index()
-
     mock_fetch.assert_called_once()
+    # Aucun appel embeddings attendu si pas d'événements
+    mock_mistral.assert_not_called()
