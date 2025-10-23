@@ -14,16 +14,25 @@ CSV_PATH = os.getenv('OPENAGENDA_PATH')
 INDEX_PATH = os.path.join(INDEX_DIR, 'index.faiss')
 METADATA_PATH = os.path.join(INDEX_DIR, 'metadata.pkl')
 
-def build_index():
-    """Construit ou charge l'index FAISS depuis le CSV"""
+
+def build_index(force_rebuild=False):
+    """Construit ou charge l'index FAISS depuis le CSV
+
+    Args:
+        force_rebuild (bool): Si True, reconstruit l'index même s'il existe déjà
+    """
 
     # Créer le répertoire si nécessaire
     os.makedirs(INDEX_DIR, exist_ok=True)
 
     # Vérifier si l'index existe déjà
     if os.path.exists(INDEX_PATH) and os.path.exists(METADATA_PATH):
-        print(f"Index existant trouvé dans {INDEX_DIR}")
-        return
+        if not force_rebuild:
+            print(f"Index existant trouvé dans {INDEX_DIR}")
+            print("Utiliser force_rebuild=True pour reconstruire l'index")
+            return
+        else:
+            print(f"Reconstruction forcée de l'index (écrasement des fichiers existants)...")
 
     print("Construction d'un nouvel index...")
 
@@ -66,4 +75,6 @@ def build_index():
 
 
 if __name__ == '__main__':
+    # Par défaut, ne reconstruit pas si l'index existe
+    # Pour forcer la reconstruction : build_index(force_rebuild=True)
     build_index()
