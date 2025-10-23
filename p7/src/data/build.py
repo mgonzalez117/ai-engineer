@@ -13,6 +13,7 @@ API = os.getenv('OPENDATASOFT_URL')
 API_DATASET = os.getenv('OPENDATASOFT_DATASET')
 FILTER_DEPARTMENT = os.getenv('FILTER_DEPARTMENT')
 FILTER_YEAR = os.getenv('FILTER_YEAR')
+EMB_MODEL = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
 
 # Chemins de persistence
 INDEX_PATH = os.path.join(INDEX_DIR, 'index.faiss')
@@ -72,58 +73,69 @@ def fetch_all_events():
 
 def build_index():
     """Construit l'index FAISS depuis l'API avec chunking"""
-    os.makedirs(INDEX_DIR, exist_ok=True)
+    try:
+        os.makedirs(INDEX_DIR, exist_ok=True)
 
-    # Récupérer tous les événements depuis l'API
-    df = fetch_all_events()
+        # Récupérer tous les événements depuis l'API
+        df = fetch_all_events()
 
-    if len(df) == 0:
-        print("Aucun événement récupéré")
-        return
+        if len(df) == 0:
+            print("Aucun événement récupéré")
+            return {
+                'success': False,
+                'message': 'Aucun événement récupéré',
+                'num_events': 0,
+                'num_chunks': 0
+            }
 
-    print(f"Construction de l'index avec {len(df)} événements...")
+        # Créer les chunks pour chaque événement
+        all_chunks = []
+        for _, event in df.iterrows():
+            event_dict = event.to_dict()
+            chunks = create_chunks_from_event(event_dict)
+            all_chunks.extend(chunks)
 
-    # Créer les chunks pour chaque événement
-    all_chunks = []
-    for _, event in df.iterrows():
-        event_dict = event.to_dict()
-        chunks = create_chunks_from_event(event_dict)
-        all_chunks.extend(chunks)
+        # Extraire les textes pour l'embedding
+        texts = [chunk['text'] for chunk in all_chunks]
 
-    print(f"Total de chunks créés : {len(all_chunks)}")
+        # Génération des embeddings
+        local_model_name = EMB_MODEL
+        used_model = f"local:{local_model_name}"
+        model = SentenceTransformer(local_model_name)
+        all_embeddings = model.encode(texts, show_progress_bar=True)
 
-    # Extraire les textes pour l'embedding
-    texts = [chunk['text'] for chunk in all_chunks]
+        embeddings = np.array(all_embeddings, dtype='float32')
 
-    print(f"Génération des embeddings...")
-    local_model_name = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
-    used_model = f"local:{local_model_name}"
-    model = SentenceTransformer(local_model_name)
-    all_embeddings = model.encode(texts, show_progress_bar=True)
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatL2(dimension)
+        index.add(embeddings)
 
-    embeddings = np.array(all_embeddings, dtype='float32')
-    print(f"Embeddings générés avec: {used_model}")
+        metadata = {
+            'texts': texts,
+            'chunks': all_chunks,
+            'num_events': len(df),
+            'num_chunks': len(all_chunks)
+        }
 
-    dimension = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dimension)
-    index.add(embeddings)
+        # Sauvegarder
+        faiss.write_index(index, INDEX_PATH)
+        with open(METADATA_PATH, 'wb') as f:
+            pickle.dump(metadata, f)
 
-    metadata = {
-        'texts': texts,
-        'chunks': all_chunks,
-        'num_events': len(df),
-        'num_chunks': len(all_chunks)
-    }
+        return {
+            'success': True,
+            'message': 'Index construit avec succès',
+            'num_events': len(df),
+            'num_chunks': len(all_chunks),
+            'avg_chunks_per_event': round(len(all_chunks) / len(df), 2),
+            'embedding_model': used_model,
+            'dimension': dimension
+        }
 
-    # Sauvegarder
-    faiss.write_index(index, INDEX_PATH)
-    with open(METADATA_PATH, 'wb') as f:
-        pickle.dump(metadata, f)
-
-    print(f"✓ Index sauvegardé")
-    print(f"✓ Total : {index.ntotal} chunks indexés depuis {len(df)} événements")
-    print(f"✓ Moyenne : {len(all_chunks) / len(df):.2f} chunks par événement")
-
-
-if __name__ == '__main__':
-    build_index()
+    except Exception as e:
+        return {
+            'success': False,
+            'message': f'Erreur : {str(e)}',
+            'num_events': 0,
+            'num_chunks': 0
+        }

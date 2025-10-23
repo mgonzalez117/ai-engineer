@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from starlette.status import HTTP_401_UNAUTHORIZED
 import os
 import secrets
+from src.api import rebuild
 
 API_TOKEN = os.getenv("API_TOKEN")
 security = HTTPBearer()
@@ -46,8 +47,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 app = FastAPI(
     title="API Chatbot pour OpenAgenda",
+    description="Recherche d'évènements publics depuis OpenAgenda",
     version="1.0.0"
 )
+app.include_router(rebuild.router)
 app.add_middleware(AuthMiddleware)
 
 # Rediriger la racine vers Swagger UI
