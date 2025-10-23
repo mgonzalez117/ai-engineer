@@ -5,7 +5,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 import pickle
 import requests
-from chunking import create_chunks_from_event
+from src.data.chunking import create_chunks_from_event
 
 # Configuration depuis les variables d'environnement
 INDEX_DIR = os.getenv('INDEX_DIR')
