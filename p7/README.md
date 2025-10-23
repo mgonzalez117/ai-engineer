@@ -11,3 +11,10 @@ Il est nécessaire d'avoir docker, ainsi que docker-compose installé sur votre 
 * Lancez la stack docker (avec `docker-compose up -d`, par exemple).
 
 Vous pouvez retrouver la configuration des différents build d'images dans le dossier `.docker`
+
+### Tests
+
+S'agissant d'un POC, les tests ne sont pas automatisés, ils seront lancés directement depuis le container principal.
+Pour ce faire il suffit d'exécuter la commande suivante depuis le container :
+
+* `pytest ./tests`

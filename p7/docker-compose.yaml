@@ -2,9 +2,7 @@ name: ai-engineer-p7
 services:
   api:
     container_name: p7-api
-    build:
-      context: .
-      dockerfile: .docker/api/Dockerfile
+    build: .
     volumes:
       - ./:/app
     ports:
@@ -12,5 +10,11 @@ services:
     environment:
       API_URL: "http://127.0.0.1:80"
       API_TOKEN: ${API_TOKEN}
+      OPENAGENDA_PATH: './assets/openagenda.csv'
+      INDEX_DIR: .ragdata/index/faiss_var_2025
+      EMB_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      SOURCE: opendatasoft
+      DEPARTMENT: Var
+      YEAR: 2025
     stdin_open: true
     tty: true
