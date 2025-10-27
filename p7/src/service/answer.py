@@ -4,7 +4,8 @@ import pickle
 import numpy as np
 from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from datetime import datetime
 
 # Configuration
 INDEX_DIR = os.getenv('INDEX_DIR')
@@ -48,19 +49,23 @@ def answer_question(question: str, top_k: int = 10) -> str:
     # Rechercher les chunks les plus pertinents
     distances, indices = index.search(question_embedding, top_k)
 
+    # Date/heure actuelle en UTC (ou fuseau local si pertinent)
+    now = datetime.now()
+    current_date_str = now.strftime("%Y-%m-%d")
+
     # Récupérer les textes des chunks pertinents
     relevant_chunks = [metadata['texts'][i] for i in indices[0]]
     context = "\n\n".join(relevant_chunks)
 
     # Créer le prompt
     prompt_template = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
+        ("system", system_prompt + f"\n\nDate actuelle: {current_date_str}"),
         ("user", "Contexte:\n{context}\n\nQuestion: {question}")
     ])
 
     # Initialiser Mistral
     llm = ChatMistralAI(
-        model="mistral-large-latest",
+        model="mistral-medium-latest",
         api_key=MISTRAL_TOKEN,
         temperature=0.3
     )

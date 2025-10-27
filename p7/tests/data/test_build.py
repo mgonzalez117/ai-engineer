@@ -1,94 +1,135 @@
-"""
-Tests unitaires pour le module build.py
-"""
-
-import pytest
+# tests/service/test_evaluate_rag.py
 import os
+
+from p7.src.service.answer import MISTRAL_TOKEN
+
+os.environ["GIT_PYTHON_REFRESH"] = "quiet"
+
+import json
+from pathlib import Path
+from typing import List, Dict
+import pytest
+
+from datasets import Dataset
+from ragas.metrics import answer_relevancy
+from ragas import evaluate
+from sentence_transformers import SentenceTransformer, util
 import pandas as pd
-import numpy as np
-from unittest.mock import patch, MagicMock, mock_open
-from src.data.build import fetch_all_events, build_index
 
+from src.service.answer import answer_question
+from langchain_mistralai import ChatMistralAI
 
-@patch('src.data.build.requests.get')
-def test_fetch_all_events_success(mock_get):
-    """Test récupération réussie des événements"""
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        'records': [
-            {'fields': {'uid': '1', 'title_fr': 'Event 1'}},
-            {'fields': {'uid': '2', 'title_fr': 'Event 2'}}
-        ],
-        'nhits': 2
+TEST_DIR = Path(__file__).parent
+TESTSET_PATH = TEST_DIR / "testset.json"
+OUT_CSV = TEST_DIR / "rag_evaluation_results.csv"
+MODEL_SIM = os.getenv("EMB_MODEL")
+MISTRAL_TOKEN = os.getenv("MISTRAL_TOKEN")
+
+# Seuils minimaux
+MIN_ANSWER_RELEVANCY = 0.6
+MIN_SIMILARITY = 0.5
+
+def load_testset(path: Path) -> List[Dict]:
+    lines = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                lines.append(json.loads(line))
+    return lines
+
+def get_ragas_judge():
+    mistral_key = MISTRAL_TOKEN
+    if not mistral_key:
+        pytest.skip("MISTRAL_TOKEN manquant pour évaluer avec RAGAS")
+    # Modèle Mistral light/medium/large selon ton quota
+    return ChatMistralAI(
+        model="mistral-small-latest",  # ou "mistral-medium-latest" / "mistral-large-latest"
+        api_key=mistral_key,
+        temperature=0.0,
+    )
+
+@pytest.fixture(scope="module")
+def evaluation_results():
+    test_items = load_testset(TESTSET_PATH)
+
+    questions, references, answers = [], [], []
+
+    for item in test_items:
+        q = item["question"]
+        ref = item["reference_answer"]
+        ans = answer_question(q, top_k=10)
+        questions.append(q)
+        references.append(ref)
+        answers.append(ans)
+
+    data = {
+        "question": questions,
+        "answer": answers,
+        "ground_truth": references,
     }
-    mock_get.return_value = mock_response
+    ds = Dataset.from_dict(data)
 
-    df = fetch_all_events()
+    # Juge RAGAS = Mistral
+    judge = get_ragas_judge()
 
-    assert len(df) == 2
-    assert 'uid' in df.columns
-    assert df.iloc[0]['uid'] == '1'
+    result = evaluate(
+        ds,
+        metrics=[answer_relevancy],
+        llm=judge,  # important: évite OpenAI, utilise Mistral
+    )
+    ragas_scores = result["answer_relevancy"]
 
+    # Similarité embeddings
+    st_model = SentenceTransformer(MODEL_SIM)
+    emb_ans = st_model.encode(answers, convert_to_tensor=True, normalize_embeddings=True)
+    emb_ref = st_model.encode(references, convert_to_tensor=True, normalize_embeddings=True)
+    cos_sims = util.cos_sim(emb_ans, emb_ref).diagonal().tolist()
 
-@patch('src.data.build.requests.get')
-def test_fetch_all_events_empty(mock_get):
-    """Test avec aucun événement"""
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'records': [], 'nhits': 0}
-    mock_get.return_value = mock_response
+    df = pd.DataFrame({
+        "question": questions,
+        "reference_answer": references,
+        "generated_answer": answers,
+        "ragas_answer_relevancy": ragas_scores,
+        "similarity_score": cos_sims,
+    })
+    df.to_csv(OUT_CSV, index=False, encoding="utf-8")
 
-    df = fetch_all_events()
+    avg_metrics = {
+        "answer_relevancy": float(sum(ragas_scores) / len(ragas_scores)),
+        "similarity_score": float(sum(cos_sims) / len(cos_sims)),
+    }
 
-    assert len(df) == 0
+    print("\n" + "="*60)
+    print("RAG — Scores:")
+    for k, v in avg_metrics.items():
+        print(f"  - {k}: {v:.3f}")
+    print(f"\nDétails sauvegardés dans {OUT_CSV}")
+    print("="*60 + "\n")
 
-
-@patch('src.data.build.requests.get')
-def test_fetch_all_events_api_error(mock_get):
-    """Test erreur API"""
-    mock_response = MagicMock()
-    mock_response.status_code = 500
-    mock_get.return_value = mock_response
-
-    df = fetch_all_events()
-
-    assert len(df) == 0
-
-
-@patch('src.data.build.fetch_all_events')
-@patch('src.data.build.HuggingFaceEmbeddings')
-@patch('src.data.build.faiss.write_index')
-@patch('builtins.open', new_callable=mock_open)
-def test_build_index_with_events(mock_file, mock_faiss_write, mock_embeddings, mock_fetch):
-    """Test construction de l'index avec des événements"""
-    mock_fetch.return_value = pd.DataFrame([
-        {'uid': '1', 'title_fr': 'Event 1', 'longdescription_fr': 'Description 1'}
-    ])
-
-    # Mock de l'instance HuggingFaceEmbeddings
-    mock_embeddings_instance = MagicMock()
-    mock_embeddings_instance.embed_documents.return_value = [[0.1, 0.2, 0.3]]
-    mock_embeddings.return_value = mock_embeddings_instance
-
-    result = build_index()
-
-    # Vérifications
-    mock_embeddings_instance.embed_documents.assert_called_once()
-    mock_faiss_write.assert_called_once()
-    assert result['success'] == True
-    assert result['num_events'] == 1
-    assert result['num_chunks'] > 0
+    return avg_metrics, df
 
 
-@patch('src.data.build.fetch_all_events')
-def test_build_index_no_events(mock_fetch):
-    """Test construction de l'index sans événements"""
-    mock_fetch.return_value = pd.DataFrame()
+def test_testset_exists():
+    assert TESTSET_PATH.exists(), f"Le fichier {TESTSET_PATH} n'existe pas"
 
-    result = build_index()
+def test_testset_not_empty():
+    test_items = load_testset(TESTSET_PATH)
+    assert len(test_items) >= 3, "Le jeu de test doit contenir au moins 3 questions"
 
-    mock_fetch.assert_called_once()
-    assert result['success'] == False
-    assert result['num_events'] == 0
-    assert result['num_chunks'] == 0
+def test_answer_relevancy(evaluation_results):
+    avg_metrics, _ = evaluation_results
+    assert avg_metrics["answer_relevancy"] >= MIN_ANSWER_RELEVANCY, \
+        f"Answer relevancy trop faible: {avg_metrics['answer_relevancy']:.3f} < {MIN_ANSWER_RELEVANCY}"
+
+def test_similarity_score(evaluation_results):
+    avg_metrics, _ = evaluation_results
+    assert avg_metrics["similarity_score"] >= MIN_SIMILARITY, \
+        f"Similarity score trop faible: {avg_metrics['similarity_score']:.3f} < {MIN_SIMILARITY}"
+
+def test_all_questions_answered(evaluation_results):
+    _, df = evaluation_results
+    empty_answers = df[df["generated_answer"].str.strip() == ""]
+    assert len(empty_answers) == 0, f"{len(empty_answers)} question(s) sans réponse"
+
+def test_csv_output_created():
+    assert OUT_CSV.exists(), f"Le fichier {OUT_CSV} n'a pas été créé"
