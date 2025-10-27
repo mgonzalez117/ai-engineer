@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 import requests
 from src.data.chunking import create_chunks_from_event
-from sentence_transformers import SentenceTransformer
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Configuration depuis les variables d'environnement
 INDEX_DIR = os.getenv('INDEX_DIR')
@@ -21,9 +21,11 @@ METADATA_PATH = os.path.join(INDEX_DIR, 'metadata.pkl')
 
 BATCH_SIZE = 128
 
+
 def batch_iter(iterable, n):
     for i in range(0, len(iterable), n):
-        yield iterable[i:i+n]
+        yield iterable[i:i + n]
+
 
 def fetch_all_events():
     """Récupère tous les événements depuis l'API OpenAgenda (Opendatasoft)"""
@@ -98,11 +100,16 @@ def build_index():
         # Extraire les textes pour l'embedding
         texts = [chunk['text'] for chunk in all_chunks]
 
-        # Génération des embeddings
+        # Génération des embeddings avec HuggingFaceEmbeddings
         local_model_name = EMB_MODEL
         used_model = f"local:{local_model_name}"
-        model = SentenceTransformer(local_model_name)
-        all_embeddings = model.encode(texts, show_progress_bar=True)
+
+        embeddings_model = HuggingFaceEmbeddings(
+            model_name=local_model_name,
+            show_progress=True
+        )
+
+        all_embeddings = embeddings_model.embed_documents(texts)
 
         embeddings = np.array(all_embeddings, dtype='float32')
 

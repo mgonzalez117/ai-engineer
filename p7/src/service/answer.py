@@ -1,9 +1,10 @@
 import os
 import faiss
 import pickle
+import numpy as np
 from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
-from sentence_transformers import SentenceTransformer
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Configuration
 INDEX_DIR = os.getenv('INDEX_DIR')
@@ -38,8 +39,11 @@ def answer_question(question: str, top_k: int = 10) -> str:
         metadata = pickle.load(f)
 
     # Générer l'embedding de la question
-    model = SentenceTransformer(EMB_MODEL)
-    question_embedding = model.encode([question])
+    embeddings_model = HuggingFaceEmbeddings(model_name=EMB_MODEL)
+    question_embedding = embeddings_model.embed_query(question)
+
+    # Convertir en numpy array 2D pour FAISS
+    question_embedding = np.array([question_embedding], dtype='float32')
 
     # Rechercher les chunks les plus pertinents
     distances, indices = index.search(question_embedding, top_k)
