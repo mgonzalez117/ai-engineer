@@ -27,5 +27,6 @@ langchain-huggingface = "^1.0.0"
 
 [tool.pytest.ini_options]
 filterwarnings = [
-    "ignore::DeprecationWarning:importlib._bootstrap"
+    "ignore::DeprecationWarning:importlib._bootstrap",
+    "ignore:Legacy embedding_factory interface is deprecated:DeprecationWarning:ragas.evaluation",
 ]

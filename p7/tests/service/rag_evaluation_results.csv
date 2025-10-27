@@ -1,46 +1,14 @@
-question,reference_answer,generated_answer,ragas_answer_relevancy,similarity_score
-Quels concerts ont lieu à Toulon ce week-end ?,"À Toulon ce week-end: 'Rock en Rade' samedi au Zénith de Toulon et 'Soirée Jazz au Port' dimanche, entrée libre.","Je ne connais pas de concert prévu **ce week-end** à Toulon.
-
-**Suggestions liées** (proches dans le temps ou l’esprit) :
-- **Soirée festive ""Les couleurs du Portugal""** – **21 juin à 20h**, Rue Castillon : musique, bifanas et poulet grillé.
-- **Opéra de Toulon** – **9 mai à 19h**, Place de l'Opéra : répétition ouverte avec mise en scène.
-
-*(Pour des concerts, précisez une date ou un style musical pour des alternatives ciblées.)*",0.0,0.6575520634651184
-Y a-t-il des événements gratuits pour enfants à Fréjus cette semaine ?,"Oui, à Fréjus cette semaine: 'Atelier BD enfants' mercredi à la médiathèque Villa-Marie (gratuit) et 'Contes au parc Areca' vendredi (gratuit).","Voici un événement gratuit adapté aux familles et aux enfants à Fréjus cette semaine :
-
-**Ateliers créatifs et restitution collective festive**
-📅 **Jeudi 17 juillet**
-⏰ **15h00 – 17h30**
-📍 **Centre Culturel de Fréjus**
-🎟 **Gratuit** – Réservation obligatoire (places limitées)
-🅿 Parking disponible – Parcours pédestre de 4 km inclus.
-
----
-**Suggestions liées** (si d’autres dates vous intéressent) :
-- **Visite audio et dégustation** (gratuit, sur réservation, limité à 100 pers.) – *idéal pour ados/familles*.
-- **Journée d’immersion en BTS Tourisme** (attestation fournie pour lycéens) – *à confirmer selon les dates disponibles*.",0.0,0.573973536491394
-Propose-moi deux expositions d’art à Hyères pour le mois prochain.,À Hyères le mois prochain: expo 'Regards Méditerranéens' à la Villa Noailles et 'Couleurs du Var' à la Galerie Contemporaine.,"Je ne connais pas d'expositions d'art prévues à Hyères pour le mois prochain.
-
-**Suggestions liées dans le Var :**
-1. **Exposition ""Panorama"" de JonOne** (peintre et graffeur) – Visite commentée en famille.
-   *Lieu : Musée des Beaux-Arts de Draguignan*
-   *Horaires : 10h-18h (visite libre) / 16h (activité spécifique)*
-
-2. **Exposition ""Distiller la lavande : le travail des Hommes""**
-   *Lieu : Couvent des Observantins, Draguignan*
-   *(Dates/horaires non précisés, à vérifier sur place ou en ligne.)*",0.0,0.705062985420227
-Quels sont les prochains spectacles d’humour à Draguignan ?,À Draguignan: 'Plateau stand-up' jeudi au théâtre Chabran et 'One-man show de L. Martin' samedi à l’Auditorium.,"Je ne connais pas de spectacle d’humour programmé à Draguignan pour l’instant.
+question,reference_answer,generated_answer,ragas_answer_relevancy,similarity_score,ragas_mode
+Quels concerts ont lieu à Toulon ce week-end ?,"À Toulon ce week-end: 'Rock en Rade' samedi au Zénith de Toulon et 'Soirée Jazz au Port' dimanche, entrée libre.","Je ne connais pas de concert prévu à Toulon ce week-end.
 
 **Suggestions liées** :
-Si vous aimez les performances interactives et théâtrales, *""Dans la peau d’un danseur""* au **Théâtre de l'Esplanade** (20 septembre 2025 à 8h) propose une expérience immersive mêlant ateliers et représentations. Gratuit, sans réservation.
-*Détails* : Ateliers participatifs, découverte des coulisses, et création collective avec la compagnie Souricière.",0.0,0.6235549449920654
-Où voir un événement de plein air à Saint-Raphaël cette semaine ?,À Saint-Raphaël cette semaine: 'Cinéma en plein air' mardi sur la plage du Veillat et 'Concert acoustique' jeudi au Jardin Bonaparte.,"Je ne connais pas d'événement de plein air à Saint-Raphaël **cette semaine**, mais voici une suggestion proche :
+Si vous aimez les ambiances festives, le marché portugais *Les couleurs du Portugal* (Rue Castillon) avait proposé une soirée musicale et gastronomique en juin. Pour des événements similaires, je peux vérifier d’autres dates ou lieux si vous précisez.",0.5804570913314819,0.5804570913314819,local_fallback
+Y a-t-il des événements gratuits pour enfants à Fréjus cette semaine ?,"Oui, à Fréjus cette semaine: 'Atelier BD enfants' mercredi à la médiathèque Villa-Marie (gratuit) et 'Contes au parc Areca' vendredi (gratuit).","Je ne connais pas d'événements gratuits pour enfants à Fréjus cette semaine.
 
-**Nuit de la Chauve-Souris**
-📅 **Vendredi 11 juillet à 18h15**
-📍 **Rastel d'Agay**, Boulevard Pierre-Delli-Zotti, D100, Saint-Raphaël
-🎟 **Gratuit** – Découverte des chauves-souris en bord de mer.
+**Suggestions liées** :
+- Des ateliers gratuits (avec restitution festive) auront lieu **le jeudi 17 juillet** (réservation obligatoire au Centre Culturel). Si vous cherchez des activités pour les prochains mois, cette option pourrait vous intéresser.",0.5869588851928711,0.5869588851928711,local_fallback
+Propose-moi deux expositions d’art à Hyères pour le mois prochain.,À Hyères le mois prochain: expo 'Regards Méditerranéens' à la Villa Noailles et 'Couleurs du Var' à la Galerie Contemporaine.,"Je n’ai pas d’expositions prévues à Hyères pour le mois de **novembre 2025** dans les informations disponibles.
 
-*Suggestions liées* :
-- **Jeu de piste à la Chapelle de l’Observance** (20-21 juin, 10h-18h) – Activité en extérieur dans un cadre historique.
-- **Concert en plein air à Bormes-les-Mimosas** (20 septembre, 21h) – Si vous cherchez une ambiance nocturne.",0.0,0.6806254982948303
+**Suggestions liées** :
+- À **Draguignan**, le **Musée des Beaux-Arts** propose une interprétation décalée de ses collections (thème estival, papier peint et créations d’artistes exposées à la boutique).
+- À **Bormes-les-Mimosas**, le **MHAB** a récemment accueilli un atelier *Urban Sketching* (21 septembre), mais aucune exposition n’est annoncée pour novembre.",0.6169008016586304,0.6169008016586304,local_fallback
