@@ -21,3 +21,23 @@ services:
       PROMPT_FILE: ${PROMPT_FILE}
     stdin_open: true
     tty: true
+    networks:
+      - ai-engineer-p7
+  demo:
+    container_name: p7-demo
+    build: ./demo
+    environment:
+      API_URL: 'http://p7-api:80'
+    ports:
+      - '${DEMO_PORT}:7860'
+    volumes:
+      - ./demo:/app
+    depends_on:
+      - api
+    networks:
+      - ai-engineer-p7
+
+networks:
+  ai-engineer-p7:
+    name: ai-engineer-p7
+    driver: bridge

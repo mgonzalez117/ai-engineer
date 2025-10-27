@@ -114,7 +114,12 @@ def build_index():
         embeddings = np.array(all_embeddings, dtype='float32')
 
         dimension = embeddings.shape[1]
-        index = faiss.IndexFlatL2(dimension)
+
+        # Index IVF pour recherche rapide sur grands volumes
+        nlist = min(int(np.sqrt(len(embeddings))), len(embeddings) // 39)
+        quantizer = faiss.IndexFlatL2(dimension)
+        index = faiss.IndexIVFFlat(quantizer, dimension, nlist)
+        index.train(embeddings)
         index.add(embeddings)
 
         metadata = {
