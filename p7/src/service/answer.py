@@ -10,7 +10,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 INDEX_DIR = os.getenv('INDEX_DIR')
 INDEX_PATH = os.path.join(INDEX_DIR, 'index.faiss')
 METADATA_PATH = os.path.join(INDEX_DIR, 'metadata.pkl')
-EMB_MODEL = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
+EMB_MODEL = os.getenv('EMB_MODEL')
 MISTRAL_TOKEN = os.getenv('MISTRAL_TOKEN')
 
 PROMPT_FILE = os.getenv("PROMPT_FILE")

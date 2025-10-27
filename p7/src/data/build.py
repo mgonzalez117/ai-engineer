@@ -13,7 +13,7 @@ API = os.getenv('OPENDATASOFT_URL')
 API_DATASET = os.getenv('OPENDATASOFT_DATASET')
 FILTER_DEPARTMENT = os.getenv('FILTER_DEPARTMENT')
 FILTER_YEAR = os.getenv('FILTER_YEAR')
-EMB_MODEL = os.getenv('EMB_MODEL', 'sentence-transformers/all-MiniLM-L6-v2')
+EMB_MODEL = os.getenv('EMB_MODEL')
 
 # Chemins de persistence
 INDEX_PATH = os.path.join(INDEX_DIR, 'index.faiss')
