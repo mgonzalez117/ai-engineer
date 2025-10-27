@@ -25,7 +25,7 @@ MODEL_SIM = os.getenv("EMB_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 MISTRAL_TOKEN = os.getenv("MISTRAL_TOKEN") or os.getenv("MISTRAL_API_KEY")
 
 # Seuils minimaux (configurables)
-MIN_ANSWER_RELEVANCY = float(os.getenv("RAGAS_MIN_ANSWER_RELEVANCY", "0.55"))
+MIN_ANSWER_RELEVANCY = float(os.getenv("RAGAS_MIN_ANSWER_RELEVANCY", "0.6"))
 MIN_SIMILARITY = float(os.getenv("RAGAS_MIN_SIMILARITY", "0.5"))
 
 # Limiter la taille du jeu de test pour réduire la charge

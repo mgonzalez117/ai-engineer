@@ -1,14 +1,15 @@
 question,reference_answer,generated_answer,ragas_answer_relevancy,similarity_score,ragas_mode
-Quels concerts ont lieu à Toulon ce week-end ?,"À Toulon ce week-end: 'Rock en Rade' samedi au Zénith de Toulon et 'Soirée Jazz au Port' dimanche, entrée libre.","Je ne connais pas de concert prévu à Toulon ce week-end.
+Quels concerts ont lieu à Toulon en décembre 2025 ?,Concerts à Toulon en décembre 2025: 1) Orchestre symphonique au Théâtre Liberté (programme de Noël). 2) Concert de jazz au Port des Créateurs (quartet local).,"Je ne connais pas de concerts prévus à Toulon en décembre 2025.
 
 **Suggestions liées** :
-Si vous aimez les ambiances festives, le marché portugais *Les couleurs du Portugal* (Rue Castillon) avait proposé une soirée musicale et gastronomique en juin. Pour des événements similaires, je peux vérifier d’autres dates ou lieux si vous précisez.",0.5804570913314819,0.5804570913314819,local_fallback
-Y a-t-il des événements gratuits pour enfants à Fréjus cette semaine ?,"Oui, à Fréjus cette semaine: 'Atelier BD enfants' mercredi à la médiathèque Villa-Marie (gratuit) et 'Contes au parc Areca' vendredi (gratuit).","Je ne connais pas d'événements gratuits pour enfants à Fréjus cette semaine.
+Si vous cherchez des événements culturels à venir, vous pourriez explorer d'autres types d'animations comme des ateliers ou des visites guidées (ex : *Théâtre Liberté* ou *Préfecture du Var* en septembre). Précisez éventuellement une autre période ou ville pour plus d’options.",0.7816399335861206,0.7816399335861206,local_fallback
+Y a-t-il des événements gratuits pour enfants à Fréjus en décembre 2025 ?,"Oui. À Fréjus en décembre 2025: 1) Ateliers créatifs de Noël à la médiathèque (gratuits, sur inscription). 2) Spectacle de contes d’hiver sur la Place Formigé (accès libre).","Oui, **""L’Univers Extraordinaire : À la poursuite du Docteur Déboulon""** propose un événement gratuit pour les jeunes scolaires (collèges, lycées) du **17 novembre au 5 décembre 2025** à Fréjus.
+*Horaires non précisés* – À confirmer sur place ou via l’organisateur.
+
+---
+**Suggestions liées** :
+- Si vous cherchez des activités pour des enfants plus jeunes (moins de 6 ans), je ne connais pas d’autres options gratuites à Fréjus en décembre. Pensez à élargir aux communes voisines comme Saint-Raphaël ou Draguignan.",0.5423269867897034,0.5423269867897034,local_fallback
+Propose-moi deux expositions d’art à Hyères en décembre 2025.,Expositions à Hyères en décembre 2025: 1) Photographie contemporaine à la Villa Noailles (salle temporaire). 2) Peinture moderne à l’Espace Saint-Bernard (sélection d’artistes régionaux).,"Je ne connais pas d'expositions d'art prévues à Hyères en décembre 2025.
 
 **Suggestions liées** :
-- Des ateliers gratuits (avec restitution festive) auront lieu **le jeudi 17 juillet** (réservation obligatoire au Centre Culturel). Si vous cherchez des activités pour les prochains mois, cette option pourrait vous intéresser.",0.5869588851928711,0.5869588851928711,local_fallback
-Propose-moi deux expositions d’art à Hyères pour le mois prochain.,À Hyères le mois prochain: expo 'Regards Méditerranéens' à la Villa Noailles et 'Couleurs du Var' à la Galerie Contemporaine.,"Je n’ai pas d’expositions prévues à Hyères pour le mois de **novembre 2025** dans les informations disponibles.
-
-**Suggestions liées** :
-- À **Draguignan**, le **Musée des Beaux-Arts** propose une interprétation décalée de ses collections (thème estival, papier peint et créations d’artistes exposées à la boutique).
-- À **Bormes-les-Mimosas**, le **MHAB** a récemment accueilli un atelier *Urban Sketching* (21 septembre), mais aucune exposition n’est annoncée pour novembre.",0.6169008016586304,0.6169008016586304,local_fallback
+- Si vous souhaitez explorer des événements artistiques proches, vous pourriez élargir votre recherche aux villes voisines comme Draguignan ou Collobrières, ou préciser une autre période.",0.7372323870658875,0.7372323870658875,local_fallback
