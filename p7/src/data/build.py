@@ -4,6 +4,7 @@ import faiss
 import numpy as np
 import pickle
 import requests
+from datetime import datetime, timedelta
 from src.data.chunking import create_chunks_from_event
 from langchain_community.embeddings import HuggingFaceEmbeddings
 
@@ -11,8 +12,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 INDEX_DIR = os.getenv('INDEX_DIR')
 API = os.getenv('OPENDATASOFT_URL')
 API_DATASET = os.getenv('OPENDATASOFT_DATASET')
+FILTER_YEARS = os.getenv('FILTER_YEARS')
 FILTER_DEPARTMENT = os.getenv('FILTER_DEPARTMENT')
-FILTER_YEAR = os.getenv('FILTER_YEAR')
 EMB_MODEL = os.getenv('EMB_MODEL')
 
 # Chemins de persistence
@@ -39,9 +40,20 @@ def fetch_all_events():
         params['refine.location_department'] = FILTER_DEPARTMENT
         print(f"Filtre appliqué : département = {FILTER_DEPARTMENT}")
 
-    if FILTER_YEAR:
-        params['refine.firstdate_begin'] = FILTER_YEAR
-        print(f"Filtre appliqué : année = {FILTER_YEAR}")
+    # Filtre par années
+    if FILTER_YEARS:
+        years = [year.strip() for year in FILTER_YEARS.split(',')]
+
+        # Construire les plages de dates pour chaque année
+        date_ranges = []
+        for year in years:
+            start_date = f"{year}/01/01"
+            end_date = f"{year}/12/31"
+            date_ranges.append(f"firstdate_begin:[{start_date} TO {end_date}]")
+
+        # Combiner avec OR
+        params['q'] = ' OR '.join(date_ranges)
+        print(f"Filtre appliqué : années = {', '.join(years)}")
 
     all_events = []
 

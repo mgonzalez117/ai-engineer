@@ -1,15 +1,18 @@
 question,reference_answer,generated_answer,ragas_answer_relevancy,similarity_score,ragas_mode
-Quels concerts ont lieu à Toulon en décembre 2025 ?,Concerts à Toulon en décembre 2025: 1) Orchestre symphonique au Théâtre Liberté (programme de Noël). 2) Concert de jazz au Port des Créateurs (quartet local).,"Je ne connais pas de concerts prévus à Toulon en décembre 2025.
+Quels concerts ont lieu à Toulon en décembre 2025 ?,Concerts à Toulon en décembre 2025: 1) Orchestre symphonique au Théâtre Liberté (programme de Noël). 2) Concert de jazz au Port des Créateurs (quartet local).,"Je ne connais pas de concert prévu à Toulon en décembre 2025 dans le contexte disponible.
 
 **Suggestions liées** :
-Si vous cherchez des événements culturels à venir, vous pourriez explorer d'autres types d'animations comme des ateliers ou des visites guidées (ex : *Théâtre Liberté* ou *Préfecture du Var* en septembre). Précisez éventuellement une autre période ou ville pour plus d’options.",0.7816399335861206,0.7816399335861206,local_fallback
-Y a-t-il des événements gratuits pour enfants à Fréjus en décembre 2025 ?,"Oui. À Fréjus en décembre 2025: 1) Ateliers créatifs de Noël à la médiathèque (gratuits, sur inscription). 2) Spectacle de contes d’hiver sur la Place Formigé (accès libre).","Oui, **""L’Univers Extraordinaire : À la poursuite du Docteur Déboulon""** propose un événement gratuit pour les jeunes scolaires (collèges, lycées) du **17 novembre au 5 décembre 2025** à Fréjus.
-*Horaires non précisés* – À confirmer sur place ou via l’organisateur.
-
----
-**Suggestions liées** :
-- Si vous cherchez des activités pour des enfants plus jeunes (moins de 6 ans), je ne connais pas d’autres options gratuites à Fréjus en décembre. Pensez à élargir aux communes voisines comme Saint-Raphaël ou Draguignan.",0.5423269867897034,0.5423269867897034,local_fallback
-Propose-moi deux expositions d’art à Hyères en décembre 2025.,Expositions à Hyères en décembre 2025: 1) Photographie contemporaine à la Villa Noailles (salle temporaire). 2) Peinture moderne à l’Espace Saint-Bernard (sélection d’artistes régionaux).,"Je ne connais pas d'expositions d'art prévues à Hyères en décembre 2025.
+- Pour des événements musicaux récents à Toulon, le contexte mentionne :
+  - Un concert de l’*Amicale Franco-Polonaise du Var* (16 octobre 2022, Église Saint-Paul Lamalgue).
+  - La *Fête de la Musique* (21 juin 2022, Place de la Liberté).
+- Pour des mises à jour, vérifier les programmations 2025-2026 auprès des salles comme *L’Hélice* (ancien CREP des Lices) ou la mairie de Toulon pourrait être utile.",0.8316062688827515,0.8316062688827515,local_fallback
+Y a-t-il des événements gratuits pour enfants à Fréjus en décembre 2025 ?,"Oui. À Fréjus en décembre 2025: 1) Ateliers créatifs de Noël à la médiathèque (gratuits, sur inscription). 2) Spectacle de contes d’hiver sur la Place Formigé (accès libre).","Je ne connais pas d'événements gratuits pour enfants à Fréjus en décembre 2025 dans les informations disponibles. Les données couvrent principalement des activités antérieures à 2024.
 
 **Suggestions liées** :
-- Si vous souhaitez explorer des événements artistiques proches, vous pourriez élargir votre recherche aux villes voisines comme Draguignan ou Collobrières, ou préciser une autre période.",0.7372323870658875,0.7372323870658875,local_fallback
+- Si vous cherchez des événements similaires, vous pourriez explorer les initiatives organisées dans les quartiers et écoles de Fréjus (comme les diffusions/débats mentionnés en 2022), mais je n’ai pas de détails pour 2025.
+- Pour des activités récentes, il pourrait être utile de préciser une période plus large (ex. : hiver 2025-2026) ou de consulter les programmes des médiathèques ou centres culturels locaux.",0.5293552875518799,0.5293552875518799,local_fallback
+Propose-moi deux expositions d’art à Hyères en décembre 2025.,Expositions à Hyères en décembre 2025: 1) Photographie contemporaine à la Villa Noailles (salle temporaire). 2) Peinture moderne à l’Espace Saint-Bernard (sélection d’artistes régionaux).,"Je ne connais pas d’expositions d’art prévues à Hyères en décembre 2025.
+
+**Suggestions liées** :
+- Si vous souhaitez des événements culturels dans le Var, précisez une autre ville ou une période différente (ex. : été 2026).
+- Pour des expositions passées, certaines ont eu lieu au **CAUE Var** ou autour de la Fondation Maeght (mais hors Hyères et hors période demandée).",0.6957889795303345,0.6957889795303345,local_fallback

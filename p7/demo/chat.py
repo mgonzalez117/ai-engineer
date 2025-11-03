@@ -2,13 +2,13 @@ import gradio as gr
 import requests
 import os
 
+TITLE = "Département du Var - Evènements 2025-2026"
 API_URL = os.getenv("API_URL")
 
 def ask_api(message):
     r = requests.post(API_URL + "/ask", json={"question": message})
     data = r.json()
-    # Adapte selon ton API, par ex. data["answer"] si c'est le champ renvoyé
-    return data if isinstance(data, str) else data.get("answer", str(data))
+    return str(data)
 
 def on_submit(user_message, chat_history):
     if not user_message:
@@ -17,12 +17,12 @@ def on_submit(user_message, chat_history):
     chat_history = chat_history + [(user_message, bot_reply)]
     return "", chat_history
 
-with gr.Blocks(title="Département du Var - Evènements 2025") as demo:
-    gr.Markdown("# Département du Var - Evènements 2025")
+with gr.Blocks(title=TITLE) as demo:
+    gr.Markdown("# "+TITLE)
 
     # Message initial du bot
     chatbot = gr.Chatbot(
-        value=[(None, "Bonjour, je suis votre assistant pour le département du Var, dédié aux évènements 2025. Comment puis-je vous aider ?")]
+        value=[(None, "Bonjour, je suis votre assistant pour le département du Var dédié aux évènements 2025-2026. Comment puis-je vous aider ?")]
     )
 
     msg = gr.Textbox(placeholder="Posez votre question…", label="Message")
