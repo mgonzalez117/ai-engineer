@@ -11,7 +11,6 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 # Configuration depuis les variables d'environnement
 INDEX_DIR = os.getenv('INDEX_DIR')
 API = os.getenv('OPENDATASOFT_URL')
-API_DATASET = os.getenv('OPENDATASOFT_DATASET')
 FILTER_YEARS = os.getenv('FILTER_YEARS')
 FILTER_DEPARTMENT = os.getenv('FILTER_DEPARTMENT')
 EMB_MODEL = os.getenv('EMB_MODEL')
@@ -19,9 +18,9 @@ EMB_MODEL = os.getenv('EMB_MODEL')
 # Chemins de persistence
 INDEX_PATH = os.path.join(INDEX_DIR, 'index.faiss')
 METADATA_PATH = os.path.join(INDEX_DIR, 'metadata.pkl')
+EVENTS_CSV_PATH = os.path.join(INDEX_DIR, 'events.csv')
 
 BATCH_SIZE = 128
-
 
 def batch_iter(iterable, n):
     for i in range(0, len(iterable), n):
@@ -31,29 +30,22 @@ def batch_iter(iterable, n):
 def fetch_all_events():
     """Récupère tous les événements depuis l'API OpenAgenda (Opendatasoft)"""
     params = {
-        'dataset': API_DATASET,
-        'rows': 1000,
-        'start': 0
+        'limit': 100,
+        'offset': 0
     }
 
-    if FILTER_DEPARTMENT:
-        params['refine.location_department'] = FILTER_DEPARTMENT
-        print(f"Filtre appliqué : département = {FILTER_DEPARTMENT}")
+    if FILTER_DEPARTMENT and FILTER_YEARS:
+        where_clause = 'location_department="' + FILTER_DEPARTMENT + '"'
 
-    # Filtre par années
-    if FILTER_YEARS:
-        years = [year.strip() for year in FILTER_YEARS.split(',')]
-
-        # Construire les plages de dates pour chaque année
-        date_ranges = []
+        years = [year.strip() for year in FILTER_YEARS.split(',') if year.strip()]
+        year_conditions = []
         for year in years:
-            start_date = f"{year}/01/01"
-            end_date = f"{year}/12/31"
-            date_ranges.append(f"firstdate_begin:[{start_date} TO {end_date}]")
+            year_conditions.append(
+                f"(firstdate_begin >= '{year}-01-01T00:00:00Z' AND firstdate_begin <= '{year}-12-31T23:59:59Z')")
 
-        # Combiner avec OR
-        params['q'] = ' OR '.join(date_ranges)
-        print(f"Filtre appliqué : années = {', '.join(years)}")
+        where_clause += " AND (" + " OR ".join(year_conditions) + ")"
+        params['where'] = where_clause
+        print(f"WHERE: {where_clause}")
 
     all_events = []
 
@@ -61,29 +53,46 @@ def fetch_all_events():
     while True:
         response = requests.get(API, params=params)
 
+        print(response.url)
+
         if response.status_code != 200:
             print(f"Erreur API: {response.status_code}")
             break
 
         data = response.json()
-        records = data.get('records', [])
+        results = data.get('results', [])  # 'results' au lieu de 'records'
+        total_count = data.get('total_count', 0)  # 'total_count' au lieu de 'nhits'
 
-        if not records:
+        if not results:
+            print("Aucun résultat")
             break
 
-        events = [record['fields'] for record in records]
-        all_events.extend(events)
+        all_events.extend(results)
 
-        print(f"Récupéré {len(all_events)} événements...")
+        print(f"Récupéré {len(all_events)}/{total_count} événements...")
 
-        if len(all_events) >= data.get('nhits', 0):
+        if len(all_events) >= total_count:
             break
 
-        params['start'] += params['rows']
+        params['offset'] += params['limit']
 
     print(f"Total récupéré : {len(all_events)} événements")
-    return pd.DataFrame(all_events)
 
+    # Sauvegarder dans un CSV
+    if all_events:
+        df = pd.DataFrame(all_events)
+
+        if 'uid' in df.columns:
+            df = df.drop_duplicates(subset='uid', keep='first')
+
+        date_col = 'firstdate_begin' if 'firstdate_begin' in df.columns else df.columns[0]
+        if date_col in df.columns:
+            df = df.sort_values(by=date_col)
+
+        df.to_csv(EVENTS_CSV_PATH, index=False)
+        print(f"{len(df)} événements uniques sauvegardés dans {EVENTS_CSV_PATH}")
+
+    return pd.DataFrame(all_events)
 
 def build_index():
     """Construit l'index FAISS depuis l'API avec chunking"""

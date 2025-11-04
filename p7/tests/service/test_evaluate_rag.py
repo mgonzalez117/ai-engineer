@@ -29,7 +29,7 @@ MIN_ANSWER_RELEVANCY = float(os.getenv("RAGAS_MIN_ANSWER_RELEVANCY", "0.6"))
 MIN_SIMILARITY = float(os.getenv("RAGAS_MIN_SIMILARITY", "0.5"))
 
 # Limiter la taille du jeu de test pour réduire la charge
-MAX_ITEMS = int(os.getenv("RAGAS_MAX_ITEMS", "3"))
+MAX_ITEMS = int(os.getenv("RAGAS_MAX_ITEMS", "5"))
 
 # Retries/backoff configurables
 RAGAS_MAX_RETRIES = int(os.getenv("RAGAS_MAX_RETRIES", "5"))
@@ -40,7 +40,6 @@ MISTRAL_MODELS_TRY = [
     "mistral-medium-latest",
     "mistral-large-latest",
 ]
-
 
 def load_testset(path: Path) -> List[Dict]:
     lines = []
@@ -55,18 +54,17 @@ def build_mistral(model_name: str):
     return ChatMistralAI(
         model=model_name,
         api_key=MISTRAL_TOKEN,
-        temperature=0.0,
+        temperature=0.3
     )
-
 
 def evaluate_with_retry(ds: Dataset, max_retries=RAGAS_MAX_RETRIES, base_sleep=RAGAS_BASE_SLEEP):
     """
     Tente evaluate(...) avec Mistral en essayant plusieurs modèles
     et un backoff exponentiel + jitter en cas de 429. Retourne la liste des scores.
-    Lève pytest.skip si aucune tentative ne passe (sera géré par fallback local).
+    Lève Exception si aucune tentative ne passe (sera géré par fallback local).
     """
     if not MISTRAL_TOKEN:
-        pytest.skip("MISTRAL_TOKEN/MISTRAL_API_KEY manquant pour évaluer avec RAGAS")
+        raise Exception("MISTRAL_TOKEN/MISTRAL_API_KEY manquant pour évaluer avec RAGAS")  # CHANGEMENT 1
 
     last_err = None
     for model_name in MISTRAL_MODELS_TRY:
@@ -94,8 +92,8 @@ def evaluate_with_retry(ds: Dataset, max_retries=RAGAS_MAX_RETRIES, base_sleep=R
                 # non-transient ou plus de retries => on tente le modèle suivant
                 break
         # essaie modèle suivant
-    # Si rien n'a marché, on skip proprement RAGAS (le fallback local prendra le relai)
-    pytest.skip(f"RAGAS (Mistral) indisponible: {last_err}")
+    # Si rien n'a marché, on lève une exception (le fallback local prendra le relai)
+    raise Exception(f"RAGAS (Mistral) indisponible: {last_err}")  # CHANGEMENT 2
 
 
 # NEW: Fallback local très simple pour approximer answer_relevancy via similarité cosinus
@@ -124,10 +122,11 @@ def evaluation_results():
     for item in test_items:
         q = item["question"]
         ref = item["reference_answer"]
-        ans = answer_question(q, top_k=5)  # un peu moins coûteux
+        ans = answer_question(q, top_k=5)
         questions.append(q)
         references.append(ref)
         answers.append(ans)
+        time.sleep(2)  # Pause entre chaque question
 
     ds = Dataset.from_dict({
         "question": questions,
@@ -139,7 +138,7 @@ def evaluation_results():
     ragas_skipped = False
     try:
         ragas_scores = evaluate_with_retry(ds)
-    except pytest.skip.Exception:
+    except Exception:  # CHANGEMENT 3 (catch Exception au lieu de pytest.skip.Exception)
         ragas_skipped = True
         ragas_scores = local_relevancy_fallback(answers, references, MODEL_SIM)
 
@@ -197,5 +196,5 @@ def test_all_questions_answered(evaluation_results):
     assert len(empty_answers) == 0, f"{len(empty_answers)} question(s) sans réponse"
 
 
-def test_csv_output_created():
+def test_csv_output_created(evaluation_results):
     assert OUT_CSV.exists(), f"Le fichier {OUT_CSV} n'a pas été créé"
