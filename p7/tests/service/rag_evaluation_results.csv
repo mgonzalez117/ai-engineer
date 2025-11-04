@@ -1,16 +1,58 @@
 question,reference_answer,generated_answer,ragas_answer_relevancy,similarity_score,ragas_mode
-Quels événements musicaux sont programmés en région toulonnaise en mai 2025 et incluent un concert de conservatoire ?,"La recherche doit faire ressortir « Concert du conservatoire avec Jean-Louis Ferrando » comme un événement musical en 2025 à Ollioules, au Jardin mistral à 21h","Je ne connais pas de événement musical spécifiquement lié au conservatoire programmé en région toulonnaise en mai 2025 dans le contexte fourni.
+Quels événements musicaux sont programmés à Ollioules au printemps 2025 ?,"La recherche doit faire ressortir « Concert du conservatoire avec Jean-Louis Ferrando » comme un événement musical en 2025 à Ollioules, au Jardin mistral à 21h","Je ne connais qu’un seul événement musical à **Ollioules** au printemps 2025 :
 
-Cependant, il y a un concert prévu le 21 juin 2023 à Le Cours 83630 Moissac-Bellevue, Moissac-Bellevue. Bien que la date ne corresponde pas à mai 2",0.746567964553833,0.746567964553833,local_fallback
-Je cherche des animations autour de la bande dessinée au printemps 2025 dans le var. Qu’est-ce qui est prévu ?,"La recherche doit identifier « La nuit de la BD » comme une animation/rencontre BD le samedi 17 mai 2025 à Tourves, le samedi 17 mai de 15h à 23h",Je ne connais pas d'animations spécifiques à la bande dessinée au printemps 2,0.5826565623283386,0.5826565623283386,local_fallback
-"Montre-moi des événements utiles pour trouver un job saisonnier au printemps 2025 dans le var (Toulon, Hyères, Ollioules)","La recherche doit remonter le « Forum emploi saisonnier », un forum de recrutement/orientation pour l’emploi saisonnier en 2025 à Hyères, le lundi 10 mars de 9h à 16h",Je ne connais pas d'événements spécifiques à Hyères et Ollioules pour le printemps 2,0.27107059955596924,0.27107059955596924,local_fallback
-Y a-t-il des visites guidées autour des sciences et du patrimoine en septembre 2025 à Toulon ?,"La recherche doit proposer « Visites guidées – Le Museum entre science et fiction » comme visites guidées à thématique science/patrimoine en 2025, à Toulon le samedi 20 septembre 2025, au Jardin du Las.","Oui, il y a deux visites guidées liées aux sciences et au patrimoine en septembre 2025 à Toulon :
+- **Concert de jazz** offert par le conservatoire MTPM
+  **Date** : 7 juin 2025
+  **Heure** : 10h00 (inauguration en musique à 11h)
+  **Lieu** : Terrain Piot – Jardin des Gorges, 1122 route des Gorges, 83190 Ollioules
 
-1. Visites guidées : Vers une métamorphose du Muséum. Le 21 septembre 2025, de 9h00 à l'heure de fermeture, au Muséum départemental du Var, Jardin du Las 737 chemin du Jonquet 83200 Toulon.
+*Suggestions liées* :
+Pour d’autres événements musicaux dans le Var au printemps 2025, vous pourriez explorer les fêtes de la musique à **Néoules** ou **Fréjus** (21 juin 2025).",0.72169029712677,0.72169029712677,local_fallback
+Je cherche des animations autour de la bande dessinée dans le var en mai 2025 Qu’est-ce qui est prévu ?,"La recherche doit identifier « La nuit de la BD » comme une animation/rencontre BD le samedi 17 mai 2025 à Tourves, le samedi 17 mai de 15h à 23h","Je ne connais pas d'animations autour de la bande dessinée dans le Var **en mai 2025** dans le contexte fourni.
 
-2. Visite ""flash"" des collections permanentes. Le 20 septembre 2025, à 10h00, au Musée d'Art de Toulon (MAT), 113, boulevard Général Leclerc, 83000 Toulon.
+**Suggestions liées** (hors période demandée) :
+- Une rencontre autour de la BD *« Gueules Rouges – Enfant de la mine »* avec les auteurs et des anciens mineurs (date et lieu non précisés).
+- Une adaptation théâtrale de la BD *« Mitsuo »* de Jérôme Hamon et Gigé (date et lieu non précisés).
 
-Suggestions liées :
-- Pour une visite commentée des collections du Musée d'Art de Toulon, vous pouvez assister à l'événement ""Visite commentée des collections du Musée d’Art"" le 13 mai 2023.
-- Pour une visite commentée de l'exposition 2024, vous pouvez assister à l'événement ""VISITE COMMENTEE - Au cœur de l'exposition 2024"" le 30 novembre 2024.",0.7920816540718079,0.7920816540718079,local_fallback
-"Quelles expositions historiques sont visibles pour les journées du patrimoine à la Valette, fin septembre 2025 ?","La recherche doit retrouver « Exposition – Reliefs d’histoire » comme exposition à thématique historique/patrimoniale, le samedi 20 et dimanche 21 septembre 2025 de 11h à 18h à la Valette du Var.",Je ne connais pas d'expositions historiques spécifiques à la Valette pour les journées du patrimoine fin septembre 2,0.6940075159072876,0.6940075159072876,local_fallback
+Pour affiner, vous pourriez préciser une ville ou un type d’animation (ex. ateliers enfants, rencontres).",0.6850576400756836,0.6850576400756836,local_fallback
+Montre-moi des événements utiles pour trouver un job saisonnier en 2025,"La recherche doit remonter le « Forum emploi saisonnier », un forum de recrutement/orientation pour l’emploi saisonnier en 2025 à Hyères, le lundi 10 mars de 9h à 16h","**La Mêlée de l'Emploi 2025** est un événement dédié au recrutement saisonnier et permanent, avec des employeurs de divers secteurs.
+- **Date** : 2025 (date exacte non communiquée, vérifier si l'événement est déjà passé cette année).
+- **Heure** : 10h–12h15 et 14h–17h.
+- **Lieu** : non précisé dans le contexte (peut-être une ville du Var, comme Toulon ou Fréjus).
+
+*Suggestions liées* :
+- Pensez à consulter les offres en ligne via la page d’inscription mentionnée pour maximiser vos chances.
+- Si la date exacte manque, surveiller les annonces locales (mairies, Pôle Emploi) pour les prochaines éditions.",0.6124731302261353,0.6124731302261353,local_fallback
+Y a-t-il des visites guidées autour des sciences et du patrimoine en septembre 2025 à Toulon ?,"La recherche doit proposer « Visites guidées – Le Museum entre science et fiction » comme visites guidées à thématique science/patrimoine en 2025, à Toulon le samedi 20 septembre 2025, au Jardin du Las.","En septembre 2025 à Toulon, voici les visites guidées liées aux sciences et au patrimoine :
+
+1. **Visites guidées du cimetière central de Toulon**
+   - **Date** : 20 septembre 2025
+   - **Heure** : 08h00
+   - **Lieu** : Cimetière Central de Toulon, Place du Souvenir, 83000 Toulon
+
+2. **Visite ""flash"" des collections permanentes** (patrimoine artistique)
+   - **Date** : 20 septembre 2025
+   - **Heure** : 10h00
+   - **Lieu** : Musée d'Art de Toulon (MAT), 113 boulevard Général Leclerc, 83000 Toulon
+
+3. **Visite du Musée national de la Marine** (patrimoine maritime et architectural)
+   - **Date** : 20 septembre 2025
+   - **Heure** : 08h00
+   - **Lieu** : Musée national de la Marine, Place Ingénieur-Colonel Monsenergue, 83000 Toulon
+
+4. **Visites guidées : *Vers une métamorphose du Muséum*** (sciences naturelles)
+   - **Date** : 21 septembre 2025
+   - **Heure** : 09h00
+   - **Lieu** : Muséum départemental du Var, Jardin du Las, 737 chemin du Jonquet, 83200 Toulon
+
+---
+**Suggestions liées** :
+- Pour des événements similaires en 2026, je ne connais pas encore les dates. Préciser une période (ex. : ""printemps 2026"") pourrait aider à affiner la recherche.",0.7296055555343628,0.7296055555343628,local_fallback
+"Quelles expositions historiques sont visibles pour les journées du patrimoine à la Valette, fin septembre 2025 ?","La recherche doit retrouver « Exposition – Reliefs d’histoire » comme exposition à thématique historique/patrimoniale, le samedi 20 et dimanche 21 septembre 2025 de 11h à 18h à la Valette du Var.","Je ne connais pas d’expositions historiques spécifiques à **La Valette-du-Var** pour les Journées du Patrimoine fin septembre 2025.
+
+**Suggestions liées** (proches géographiquement ou thématiquement) :
+- **Exposition ""Le Patrimoine architectural roquebrunois""** (Roquebrune-sur-Argens) : du 18/09/25 (heure non communiquée) sur la promenade Adrien Beaumont et le boulevard de la Liberté.
+- **Exposition ""Vois-tu ici le fleur ?""** (Bargemon) : le 19/09/25 à 8h00 au musée galerie Honoré Camos, dédiée à l’oléiculture.
+- **Parcours ""Leçons d’architecture""** : du 23/09 au 02/10/25 dans une abbaye (lieu non précisé).
+
+Pour affiner, vérifier les villes voisines ou les dates exactes.",0.7216323614120483,0.7216323614120483,local_fallback

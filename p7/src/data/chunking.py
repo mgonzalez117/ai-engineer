@@ -86,8 +86,8 @@ def create_chunks_from_event(event: Dict, chunk_size: int = CHUNK_SIZE, overlap:
     # Créer les chunks avec métadonnées
     chunks = []
     for idx, chunk_text in enumerate(text_chunks):
-        # Ajouter le contexte (titre + date + lieu) au début du premier chunk
-        if idx == 0 and contexte:
+        # Ajouter le contexte (titre + date + lieu) au début de TOUS les chunks
+        if contexte:
             chunk_text = f"{contexte}. {chunk_text}"
 
         chunks.append({

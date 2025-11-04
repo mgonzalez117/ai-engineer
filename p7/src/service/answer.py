@@ -23,13 +23,13 @@ with open(PROMPT_FILE, "r", encoding="utf-8") as f:
     system_prompt = f.read().strip()
 
 
-def answer_question(question: str, top_k: int = 10) -> str:
+def answer_question(question: str, top_k: int = 30) -> str:
     """
     Répond à une question en utilisant RAG avec Mistral
 
     Args:
         question: La question posée par l'utilisateur
-        top_k: Nombre de chunks à récupérer (défaut: 10)
+        top_k: Nombre de chunks à récupérer (défaut: 30)
 
     Returns:
         La réponse générée par Mistral
