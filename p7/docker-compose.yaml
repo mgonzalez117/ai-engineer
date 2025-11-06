@@ -9,7 +9,7 @@ services:
       - '${API_PORT}:80'
     environment:
       PYTHONPATH: /app
-      API_URL: 'http://127.0.0.1:80'
+      API_URL: ${API_URL}
       API_TOKEN: ${API_TOKEN}
       INDEX_DIR: ${INDEX_DIR}
       OPENDATASOFT_URL: ${OPENDATASOFT_URL}
