@@ -17,7 +17,7 @@ jobs:
 
       - name: Create .env from .env.dist
         run: |
-          cp .env.dist .env
+          cp p7/.env.dist p7/.env
           echo "API_TOKEN=${{ secrets.API_TOKEN }}" >> .env
           echo "MISTRAL_TOKEN=${{ secrets.MISTRAL_TOKEN }}" >> .env
 
