@@ -28,9 +28,25 @@ jobs:
         working-directory: p7
         run: docker compose build api
 
-      - name: Run pytest inside api container
+      - name: Start API (uses CMD uvicorn)
         working-directory: p7
-        run: docker compose run --rm api pytest ./tests -v
+        run: docker compose up -d api
+
+      - name: Wait until API is ready
+        working-directory: p7
+        run: |
+          for i in $(seq 1 45); do
+            if docker compose exec -T api sh -lc "curl -fsS http://127.0.0.1:80/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/test-auth >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/ >/dev/null 2>&1"; then
+              echo "API is up"
+              break
+            fi
+            echo "Waiting API ($i)..."
+            sleep 2
+          done
+
+      - name: Run pytest inside running api container
+        working-directory: p7
+        run: docker compose exec -T api pytest ./tests -v
 
       - name: Cleanup
         if: always()
