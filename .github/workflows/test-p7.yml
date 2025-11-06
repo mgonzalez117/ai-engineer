@@ -1,16 +1,12 @@
-name: Run Tests (p7)
+name: Run Tests (p7 - same container)
 
 on:
   push:
     branches: [ main, develop ]
-    paths:
-      - "p7/**"
-      - ".github/workflows/test-p7.yml"
+    paths: [ "p7/**", ".github/workflows/test-p7.yml" ]
   pull_request:
     branches: [ main, develop ]
-    paths:
-      - "p7/**"
-      - ".github/workflows/test-p7.yml"
+    paths: [ "p7/**", ".github/workflows/test-p7.yml" ]
   workflow_dispatch:
 
 jobs:
@@ -21,20 +17,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create .env from .env.dist
+      - name: Prepare .env
         working-directory: p7
         run: |
           cp .env.dist .env
-          {
-            echo "API_TOKEN=${{ secrets.API_TOKEN }}"
-            echo "MISTRAL_TOKEN=${{ secrets.MISTRAL_TOKEN }}"
-          } >> .env
+          # newline safe
+          printf "\nAPI_TOKEN=%s\nMISTRAL_TOKEN=%s\n" "${{ secrets.API_TOKEN }}" "${{ secrets.MISTRAL_TOKEN }}" >> .env
 
-      - name: Build and run tests (docker compose in p7/)
+      - name: Build image
         working-directory: p7
-        run: |
-          docker compose build api
-          docker compose run --rm api pytest ./tests -v
+        run: docker compose build api
+
+      - name: Run pytest inside api container
+        working-directory: p7
+        run: docker compose run --rm api pytest ./tests -v
 
       - name: Cleanup
         if: always()
