@@ -1,4 +1,4 @@
-name: Run Tests (p7 - same container)
+name: Run Tests (p7)
 
 on:
   push:
@@ -21,19 +21,18 @@ jobs:
         working-directory: p7
         run: |
           cp .env.dist .env
-          # newline safe
+          # Ajoute une NL avant les secrets pour éviter les lignes collées
           printf "\nAPI_TOKEN=%s\nMISTRAL_TOKEN=%s\n" "${{ secrets.API_TOKEN }}" "${{ secrets.MISTRAL_TOKEN }}" >> .env
 
-      - name: Ensure INDEX_DIR exists
+      - name: Ensure data dirs exist
         working-directory: p7
         run: |
-          set -e
-          dir="$(grep '^INDEX_DIR=' .env | cut -d= -f2-)"
-          echo "Creating $dir"
-          mkdir -p "$dir"
-          ls -la "$dir"
+          # Crée les dossiers ignorés par git que l'app attend
+          mkdir -p .ragdata/index/faiss_var
+          # Optionnel: valider que le prompt existe
+          test -f prompts/answer_events.txt || { echo "Missing prompts/answer_events.txt"; exit 1; }
 
-      - name: Build image
+      - name: Build image (only if needed)
         working-directory: p7
         run: docker compose build api
 
@@ -41,25 +40,32 @@ jobs:
         working-directory: p7
         run: docker compose up -d api
 
-      - name: Show API initial logs and status
-        working-directory: p7
-        run: |
-          echo "---- docker compose ps ----"
-          docker compose ps
-          echo "---- initial api logs (tail 300) ----"
-          docker compose logs --no-color --tail=300 api || true
-
-      - name: Wait until API is ready
+      - name: Wait until API responds (light check)
         working-directory: p7
         run: |
           for i in $(seq 1 45); do
-            if docker compose exec -T api sh -lc "curl -fsS http://127.0.0.1:80/health >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/test-auth >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/ >/dev/null 2>&1"; then
+            if docker compose exec -T api sh -lc 'curl -fsS http://127.0.0.1:80/docs >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/openapi.json >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/ >/dev/null 2>&1'; then
               echo "API is up"
-              break
+              exit 0
             fi
             echo "Waiting API ($i)..."
             sleep 2
           done
+          echo "API did not become ready"
+          docker compose logs api
+          exit 1
+
+      - name: Pre-build Faiss index (Python)
+        working-directory: p7
+        run: |
+          docker compose exec -T api sh -lc '
+            set -e
+            python - << "PY"
+from src.data.build import build_index
+build_index()
+print("Index built successfully.")
+PY
+          '
 
       - name: Run pytest inside running api container
         working-directory: p7
