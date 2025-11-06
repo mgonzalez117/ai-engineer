@@ -122,7 +122,7 @@ def evaluation_results():
     for item in test_items:
         q = item["question"]
         ref = item["reference_answer"]
-        ans = answer_question(q, top_k=5)
+        ans = answer_question(q, top_k=20)
         questions.append(q)
         references.append(ref)
         answers.append(ans)
