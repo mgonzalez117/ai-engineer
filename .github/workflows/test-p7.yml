@@ -40,21 +40,6 @@ jobs:
         working-directory: p7
         run: docker compose up -d api
 
-      - name: Wait until API responds (light check)
-        working-directory: p7
-        run: |
-          for i in $(seq 1 45); do
-            if docker compose exec -T api sh -lc 'curl -fsS http://127.0.0.1:80/docs >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/openapi.json >/dev/null 2>&1 || curl -fsS http://127.0.0.1:80/ >/dev/null 2>&1'; then
-              echo "API is up"
-              exit 0
-            fi
-            echo "Waiting API ($i)..."
-            sleep 2
-          done
-          echo "API did not become ready"
-          docker compose logs api
-          exit 1
-
       - name: Pre-build Faiss index (Python)
         working-directory: p7
         run: |
