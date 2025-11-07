@@ -58,14 +58,11 @@ jobs:
       - name: Pre-build Faiss index (Python)
         working-directory: p7
         run: |
-          docker compose exec -T api sh -lc '
-            set -e
-            python - << "PY"
-from src.data.build import build_index
-build_index()
-print("Index built successfully.")
-PY
-          '
+          docker compose exec -T api sh -lc "python - <<'PY'
+            from src.data.build import build_index
+            build_index()
+            print('Index built successfully.')
+            PY"
 
       - name: Run pytest inside running api container
         working-directory: p7
