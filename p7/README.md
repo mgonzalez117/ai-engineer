@@ -27,6 +27,16 @@ Il est nécessaire d'avoir docker, ainsi que docker-compose installé sur votre 
   * `MISTRAL_TOKEN` : token API mistral, à générer dans https://admin.mistral.ai/organization/api-keys
   * `DEMO_PORT` : port exposé de la démo du chatbot (Gradio), permet de tester aisément le POC
 
+### Documentation d'API
+
+La documentation d'API est exposée sur votre hôte docker local via le port ${API_PORT}.
+* Par défaut http://127.0.0.1:8000
+
+### ChatBot démonstration
+
+Un chatbot de démonstration a été ajouté (container p7-demo), il est acessible sur votre hôte docker local via ${DEMO_PORT}
+* Par défaut http://127.0.0.1:8080
+
 ## Structure générale
 
  * `.ragdata/` : volume monté dans docker permettant la persistance de la base vectorielle
@@ -46,9 +56,18 @@ Il est nécessaire d'avoir docker, ainsi que docker-compose installé sur votre 
 
 ## Tests
 
-S'agissant d'un POC, les tests ne sont pas automatisés, ils seront lancés directement depuis le container principal.
-Pour ce faire il suffit d'exécuter la commande suivante depuis le container :
+Les tests sont automatisés sur le dépôt github grâce au fichier `.github/workflows/test-p7.yml`
 
+Il est également possible des lancer en local.
+Pour ce faire il faut lancer les containers docker puis : 
+* Construire l'index en utilisant la requête POST suivante (voir sur doc d'API)
+```
+curl --location --request PUT 'http://127.0.0.1:8000/rebuild' \
+--header 'Authorization: ${API_TOKEN}' \
+--data ''
+```
+
+Puis se connecter au container `p7-api` et exécuter le test suivant : 
 * `pytest ./tests`
 
 **Remarque : Attention l'utilisation de `pytest ./tests/service` peut entrainer l'utilisation de l'API Mistral (pour RAGAS) et donc de la consommation**

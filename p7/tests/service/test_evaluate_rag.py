@@ -74,6 +74,7 @@ def evaluate_with_retry(ds: Dataset, max_retries=RAGAS_MAX_RETRIES, base_sleep=R
                 result = evaluate(ds, metrics=[answer_relevancy], llm=judge)
                 return result["answer_relevancy"]
             except Exception as e:
+                print(f"Erreur : {e}")
                 msg = str(e)
                 transient = (
                     "429" in msg
@@ -93,22 +94,23 @@ def evaluate_with_retry(ds: Dataset, max_retries=RAGAS_MAX_RETRIES, base_sleep=R
                 break
         # essaie modèle suivant
     # Si rien n'a marché, on lève une exception (le fallback local prendra le relai)
-    raise Exception(f"RAGAS (Mistral) indisponible: {last_err}")  # CHANGEMENT 2
+    raise Exception(f"RAGAS (Mistral) indisponible: {last_err}")
 
 
-# NEW: Fallback local très simple pour approximer answer_relevancy via similarité cosinus
-def local_relevancy_fallback(answers, references, emb_model_name: str):
+# NEW: Fallback local pour approximer la pertinence (answer vs question),
+# pas la similarité à la référence.
+def local_relevancy_fallback(answers, questions, emb_model_name: str):
     """
-    Approxime la 'answer_relevancy' par la similarité cosinus embeddings.
-    Valeurs entre 0 et 1, compatible avec l'attente RAGAS pour un seuil simple.
+    Approxime 'answer_relevancy' par la proximité sémantique de la réponse à la question,
+    au lieu de la similarité à la réponse de référence.
+    Valeurs entre 0 et 1.
     """
     st_model = SentenceTransformer(emb_model_name)
     emb_ans = st_model.encode(answers, convert_to_tensor=True, normalize_embeddings=True)
-    emb_ref = st_model.encode(references, convert_to_tensor=True, normalize_embeddings=True)
-    sims = util.cos_sim(emb_ans, emb_ref).diagonal().tolist()
+    emb_q = st_model.encode(questions, convert_to_tensor=True, normalize_embeddings=True)
+    sims = util.cos_sim(emb_ans, emb_q).diagonal().tolist()
     # clamp au cas où
-    sims = [max(0.0, min(1.0, float(s))) for s in sims]
-    return sims
+    return [max(0.0, min(1.0, float(s))) for s in sims]
 
 
 @pytest.fixture(scope="module")
@@ -138,9 +140,9 @@ def evaluation_results():
     ragas_skipped = False
     try:
         ragas_scores = evaluate_with_retry(ds)
-    except Exception:  # CHANGEMENT 3 (catch Exception au lieu de pytest.skip.Exception)
+    except Exception:  # (catch Exception au lieu de pytest.skip.Exception)
         ragas_skipped = True
-        ragas_scores = local_relevancy_fallback(answers, references, MODEL_SIM)
+        ragas_scores = local_relevancy_fallback(answers, questions, MODEL_SIM)
 
     # Similarité embeddings (toujours calculée)
     st_model = SentenceTransformer(MODEL_SIM)

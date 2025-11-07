@@ -1,82 +1,97 @@
 question,reference_answer,generated_answer,ragas_answer_relevancy,similarity_score,ragas_mode
-Quels événements musicaux sont programmés à Ollioules au printemps 2025 ?,"La recherche doit faire ressortir « Concert du conservatoire avec Jean-Louis Ferrando » comme un événement musical en 2025 à Ollioules, au Jardin mistral à 21h","Voici les événements musicaux programmés à **Ollioules** au **printemps 2025** (mars à mai) selon le contexte fourni :
+Quels événements musicaux sont programmés à Ollioules au printemps 2025 ?,"La recherche doit faire ressortir « Concert du conservatoire avec Jean-Louis Ferrando » comme un événement musical en 2025 à Ollioules, au Jardin mistral à 21h","Je ne connais qu’un seul événement musical programmé à **Ollioules** au printemps 2025 :
 
-- **Concert de jazz offert par le conservatoire MTPM**
-  *Samedi 7 juin 2025 à 10h00*
-  Terrain Piot, 1122 route des Gorges, Ollioules
-  *Dans le cadre des ""RDV aux Jardins 2025"", avec rafraîchissements en plein air.*
+- **Concert de jazz** offert par le conservatoire MTPM
+  **Date** : 7 juin 2025
+  **Heure** : 10h00
+  **Lieu** : Terrain Piot (1122 route des Gorges, Ollioules)
+  *Dans le cadre des *Rendez-vous aux Jardins 2025*, en plein air au Jardin des Gorges.*
 
-*Aucun autre événement musical n'est répertorié à Ollioules pour le printemps 2025 dans le contexte fourni.*
-
+---
 **Suggestions liées** :
-- Si vous cherchez des concerts proches, le **Jardin du Las à Toulon** propose un concert déambulatoire le *8 juin 2025 à 13h00* (""Les Semeuses au Jardin"").",0.7748349905014038,0.7748349905014038,local_fallback
-Je cherche des animations autour de la bande dessinée dans le var en mai 2025 Qu’est-ce qui est prévu ?,"La recherche doit identifier « La nuit de la BD » comme une animation/rencontre BD le samedi 17 mai 2025 à Tourves, le samedi 17 mai de 15h à 23h","Je ne connais pas d'animations autour de la bande dessinée dans le Var en mai 2025 dans le contexte fourni.
+Pour d’autres événements musicaux printaniers dans le Var, vous pourriez explorer :
+- *Nuit au Musée avec Ritournelles* (17 mai 2025, Toulon) – ambiance guinguette et sono mondiale.
+- *Rendez-vous aux jardins* (7 juin 2025, La Valette-du-Var) – avec concert du conservatoire en journée.",0.79502272605896,0.7339593172073364,local_fallback
+Je cherche des animations autour de la bande dessinée dans le var en mai 2025 Qu’est-ce qui est prévu ?,"La recherche doit identifier « La nuit de la BD » comme une animation/rencontre BD le samedi 17 mai 2025 à Tourves, le samedi 17 mai de 15h à 23h","Je ne connais qu’un seul événement autour de la bande dessinée dans le Var en mai 2025 :
 
+**La Nuit de la BD**
+- **Date** : 17 mai 2025
+- **Heure** : 13h00
+- **Lieu** : Musée des gueules rouges, Avenue de la Libération, **Tourves**
+- **Détails** : Plongez dans l’univers de la BD avec des ateliers enfants et une rencontre avec les auteurs de *Gueules Rouges – Enfant de la mine*, en présence d’anciens mineurs.
+
+---
 **Suggestions liées** :
-Si le thème historique ou ludique vous intéresse, vous pourriez explorer :
-- *« Les minots dans la Résistance »* (escape game familial) le **17 mai 2025 à 14h00**, à la **Maison de l'Histoire des Arcs** (Les Arcs). Public : enfants dès 9 ans.",0.5678384304046631,0.5678384304046631,local_fallback
-Montre-moi des événements utiles pour trouver un job saisonnier en 2025,"La recherche doit remonter le « Forum emploi saisonnier », un forum de recrutement/orientation pour l’emploi saisonnier en 2025 à Hyères, le lundi 10 mars de 9h à 16h","Voici les événements dédiés à la recherche d'un job saisonnier dans le Var en 2025, classés par date :
+Si le thème de la BD vous intéresse, vous pourriez aussi apprécier :
+- *Livre objet - Objet livre* (atelier créatif autour des livres animés) le **4 octobre 2025** à la médiathèque de **Lorgues** (hors période demandée, mais proche dans l’esprit).",0.7161674499511719,0.7262488007545471,local_fallback
+Montre-moi des événements utiles pour trouver un job saisonnier en 2025,"La recherche doit remonter le « Forum emploi saisonnier », un forum de recrutement/orientation pour l’emploi saisonnier en 2025 à Hyères, le lundi 10 mars de 9h à 16h","En 2025, voici les événements dédiés à la recherche de jobs saisonniers dans le Var :
 
-1. **Forum de l'Emploi Saisonnier et des Jobs Étudiants**
+1. **Job Dating - Hôtellerie Restauration Commerce** (Draguignan)
+   - **Date** : 10 mars 2025
+   - **Heure** : 8h00
+   - **Lieu** : Draguignan
+
+2. **Forum Belambra** (Hyères)
+   - **Date** : 10 mars 2025
+   - **Heure** : 9h00 (accueil et job dating le matin)
+   - **Lieu** : Belambra Les Criques, 406 avenue de l’Esterel, Presqu’île de Giens, Hyères
+
+3. **Forum de l'Emploi Saisonnier et des Jobs Étudiants** (Saint-Raphaël)
    - **Date** : 12 mars 2025
-   - **Heure** : 13h00 à 17h00
-   - **Lieu** : Palais des Congrès, Saint-Raphaël
-   - *Plus de 1000 postes proposés dans 80 entreprises, CDD/CDI possibles.*
+   - **Heure** : 12h00
+   - **Lieu** : Saint-Raphaël
+   - *Secteurs* : Commerce, grande distribution, services, agriculture.
 
-2. **Mêlée de l'Emploi 2025**
-   - **Date** : 14 mars 2025
-   - **Heure** : 10h00 à 12h15 et 14h00 à 17h00
-   - **Lieu** : Agence Toulon La Rode, La Valette-du-Var (près de Toulon)
-   - *Offres variées en CDD/CDI, entretiens courts sur place.*
+4. **Job Dating Restauration** (Saint-Maximin-la-Sainte-Baume)
+   - **Date** : 21 mars 2025
+   - **Heure** : dès 8h00
+   - **Lieu** : Saint-Maximin-la-Sainte-Baume
+   - *Postes* : Serveur, cuisinier, employé polyvalent.
 
-3. **[Semaine Jeunes] Opération un job pour la saison à Sanary ! #SJ25**
-   - **Date** : 25 mars 2025
-   - **Heure** : 8h00 (heure de début, durée non précisée)
-   - **Lieu** : Sanary-sur-Mer
-   - *Rencontres avec des professionnels, immersions et propositions concrètes.*
-
-4. **Recrutement VTF Le Castelet**
+5. **Rencontre avec le VTF Le Castelet** (Fréjus)
    - **Date** : 1er avril 2025
-   - **Heure** : 7h30 (heure non confirmée, à vérifier)
+   - **Heure** : 8h30 à 12h00
    - **Lieu** : Fréjus
-   - *Postes saisonniers pour juillet/août (service, entretien, maintenance).*
+   - *Contrats* : CDD saisonniers (avril à novembre ou juillet-août).
 
 ---
 **Suggestions liées** :
-- Pour des opportunités ciblées sur la restauration ou l’hôtellerie, privilégiez le **Forum de Saint-Raphaël** ou le **recrutement VTF Le Castelet**.
-- Pour une approche immersive (découverte des métiers), l’événement de **Sanary-sur-Mer** est adapté.",0.7190102338790894,0.7190102338790894,local_fallback
-Y a-t-il des visites guidées autour des sciences et du patrimoine en septembre 2025 à Toulon ?,"La recherche doit proposer « Visites guidées – Le Museum entre science et fiction » comme visites guidées à thématique science/patrimoine en 2025, à Toulon le samedi 20 septembre 2025, au Jardin du Las.","En septembre 2025 à Toulon, plusieurs visites guidées liées au patrimoine étaient proposées, mais je ne connais pas d'événement explicitement axé sur les sciences. Voici les options patrimoniales disponibles :
+- Pour des opportunités en **hôtellerie-restauration**, privilégiez les événements à **Draguignan (10/03)** ou **Saint-Maximin (21/03)**.
+- Pour un **forum généraliste** avec 80 entreprises, rendez-vous à **Saint-Raphaël (12/03)**.",0.7229745984077454,0.6673732995986938,local_fallback
+Y a-t-il des visites guidées autour des sciences et du patrimoine en septembre 2025 à Toulon ?,"La recherche doit proposer « Visites guidées – Le Museum entre science et fiction » comme visites guidées à thématique science/patrimoine en 2025, à Toulon le samedi 20 septembre 2025, au Jardin du Las.","En septembre 2025 à Toulon, voici les visites guidées ou événements liés aux **sciences** et au **patrimoine** :
 
-1. **Visite guidée des Archives de Toulon**
+1. **Visites guidées du cimetière central de Toulon**
    - **Date** : 20 septembre 2025
-   - **Heure** : 10h00 et 10h45 (sur inscription)
-   - **Lieu** : Archives municipales de Toulon, 3 impasse Calvi, 83100 Toulon.
-   - *Thème* : Découverte de bâtiments méconnus de Toulon, de la fin du Moyen Âge à nos jours.
+   - **Heure** : 08h00 (heure de début, horaires détaillés non communiqués)
+   - **Lieu** : Cimetière Central de Toulon, Place du Souvenir, 83000 Toulon
+   - *Focus* : Découverte des figures historiques et du patrimoine funéraire.
 
-2. **Visites guidées du cimetière central de Toulon**
+2. **Visite du Musée national de la Marine**
    - **Date** : 20 septembre 2025
-   - **Heure** : 8h00 (heure de départ non précisée, à confirmer sur place)
-   - **Lieu** : Cimetière Central, Place du Souvenir, 83000 Toulon.
-   - *Thème* : Parcours historique parmi les figures marquantes de Toulon (Jean Aicard, Raimu, etc.).
+   - **Heure** : 08h00 (accès libre toute la journée, animations avec médiateurs)
+   - **Lieu** : Place Ingénieur-Colonel Monsenergue, 83000 Toulon
+   - *Thèmes* : Patrimoine naval, architecture et écologie (exposition liée).
 
-3. **Visite du Musée national de la Marine**
-   - **Date** : 20 septembre 2025
-   - **Heure** : 8h00 (ouverture, horaires des visites guidées non communiqués)
-   - **Lieu** : Place Ingénieur-Colonel Monsenergue, 83000 Toulon.
-   - *Thème* : Histoire maritime et architecturale, incluant l’ancienne porte de l’Arsenal.
+3. **Visite du Service Historique de la Défense**
+   - **Dates** : 20 et 21 septembre 2025
+   - **Heure** : 10h00–18h00
+   - **Lieu** : Bibliothèque du SHD, Passage de la Corderie, 83000 Toulon
+   - *Focus* : Expositions sur *""L’écologie et la marine nationale""* (sciences + patrimoine).
 
-4. **Promenade architecturale : *Le logement collectif d’hier à aujourd’hui***
+4. **Conférence « Tour et détours : monuments méconnus de Toulon »**
    - **Date** : 20 septembre 2025
-   - **Heure** : 8h00 (heure de départ non précisée)
-   - **Lieu** : CAUE Var, 26 Place Vincent Raspail, 83000 Toulon.
-   - *Thème* : Évolution du patrimoine résidentiel, des années 1950 à nos jours.
+   - **Heure** : 13h30
+   - **Lieu** : Archives municipales, 3 impasse Calvi, 83000 Toulon
+   - *Thème* : Patrimoine architectural (clés de voûte, fontaines, etc.).
 
 ---
 **Suggestions liées** :
-- La **conférence *« Tour et détours : monuments méconnus de Toulon »*** (20/09 à 13h30, mêmes Archives municipales) pourrait compléter ces visites, avec un focus sur des éléments architecturaux rares (fontaine des allées Courbet, altanas, etc.).
-- L’**exposition *« Habiter l’Ensemble »*** (CAUE Var, à partir du 19/09) aborde aussi le patrimoine bâti sous un angle historique et prospectif.",0.7183352708816528,0.7183352708816528,local_fallback
-"Quelles expositions historiques sont visibles pour les journées du patrimoine à la Valette, fin septembre 2025 ?","La recherche doit retrouver « Exposition – Reliefs d’histoire » comme exposition à thématique historique/patrimoniale, le samedi 20 et dimanche 21 septembre 2025 de 11h à 18h à la Valette du Var.","Je ne connais pas d’expositions historiques à **La Valette-du-Var** pour les Journées du Patrimoine en septembre 2025.
+- Pour une approche **scientifique**, privilégiez le **Service Historique de la Défense** (écologie/marine).
+- Pour le **patrimoine historique**, le **cimetière central** ou la **conférence aux Archives** offrent des angles complémentaires.",0.8204858303070068,0.6650526523590088,local_fallback
+"Quelles expositions historiques sont visibles pour les journées du patrimoine à la Valette, fin septembre 2025 ?","La recherche doit retrouver « Exposition – Reliefs d’histoire » comme exposition à thématique historique/patrimoniale, le samedi 20 et dimanche 21 septembre 2025 de 11h à 18h à la Valette du Var.","À La Valette-du-Var, lors des **Journées du Patrimoine 2025**, une seule exposition historique était programmée :
 
-**Suggestions liées** (événements proches dans le Var) :
-- **Visites guidées de la mine de l'Argentière** (La Londe-les-Maures, 20/09/2025, 7h00, Office de tourisme intercommunal).
-- **Musée Archéologique Municipal** (Fréjus, 20/09/2025, 8h00, Place du Docteur CALVINI).",0.7642828226089478,0.7642828226089478,local_fallback
+- **""Reliefs d'histoire""** – **20 septembre 2025 à 09h00**
+  *Lieu* : Maison du Patrimoine et des associations, 38 avenue du Char Verdun.
+  *Contenu* : Découverte de la ville à travers son histoire (1794), son patrimoine bâti et un plan-relief réalisé par des Valettois.
+
+*Aucune autre exposition historique n’est répertoriée à La Valette pour cette période.*",0.7927291989326477,0.7291548848152161,local_fallback

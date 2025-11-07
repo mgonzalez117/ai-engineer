@@ -11,17 +11,19 @@ from src.data.build import fetch_all_events, build_index
 
 
 @patch('src.data.build.requests.get')
-def test_fetch_all_events_success(mock_get):
+@patch('pandas.DataFrame.to_csv')  # ✅ Mock to_csv pour éviter la sauvegarde
+def test_fetch_all_events_success(mock_to_csv, mock_get):
     """Test récupération réussie des événements"""
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {
-        'records': [
-            {'fields': {'uid': '1', 'title_fr': 'Event 1'}},
-            {'fields': {'uid': '2', 'title_fr': 'Event 2'}}
+        'results': [
+            {'uid': '1', 'title_fr': 'Event 1'},
+            {'uid': '2', 'title_fr': 'Event 2'}
         ],
-        'nhits': 2
+        'total_count': 2
     }
+    mock_response.url = 'http://mock-url.com'
     mock_get.return_value = mock_response
 
     df = fetch_all_events()
@@ -32,11 +34,16 @@ def test_fetch_all_events_success(mock_get):
 
 
 @patch('src.data.build.requests.get')
-def test_fetch_all_events_empty(mock_get):
+@patch('pandas.DataFrame.to_csv')  # ✅ Mock to_csv
+def test_fetch_all_events_empty(mock_to_csv, mock_get):
     """Test avec aucun événement"""
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = {'records': [], 'nhits': 0}
+    mock_response.json.return_value = {
+        'results': [],
+        'total_count': 0
+    }
+    mock_response.url = 'http://mock-url.com'
     mock_get.return_value = mock_response
 
     df = fetch_all_events()
@@ -49,6 +56,7 @@ def test_fetch_all_events_api_error(mock_get):
     """Test erreur API"""
     mock_response = MagicMock()
     mock_response.status_code = 500
+    mock_response.url = 'http://mock-url.com'
     mock_get.return_value = mock_response
 
     df = fetch_all_events()
