@@ -108,9 +108,9 @@ def test_event_with_long_description():
     assert 'Titre: Festival' in chunks[0]['text']
     assert 'Date: 2025-09-10' in chunks[0]['text']
     assert 'Lieu: Parc Expo' in chunks[0]['text']
-    # ✅ Vérifier que le 2e chunk contient du contenu (pas juste le contexte)
+    # Vérifier que le 2e chunk contient du contenu (pas juste le contexte)
     assert 'Lorem ipsum' in chunks[1]['text']
-    # ✅ Vérifier que tous les chunks ont les métadonnées
+    # Vérifier que tous les chunks ont les métadonnées
     assert all(chunk['titre'] == 'Festival' for chunk in chunks)
     assert all(chunk['date'] == '2025-09-10' for chunk in chunks)
 
