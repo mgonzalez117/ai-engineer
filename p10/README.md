@@ -1,4 +1,4 @@
-# Projet 6 - MLOps (part I)
+# Projet 10 - Labellisez et appliquez des approches semi-supervisées en traitement d'images
 
 ## Comment utiliser ce livrable
 
