@@ -7,3 +7,4 @@ PREPARED_DIR = Path("../.data/prepared")
 FEATURES_DIR = Path("../.data/features")
 WITHOUT_LABEL = "sans_label"
 WITH_LABEL = "avec_labels"
+WEAK_LABELS = "weak_labels"
