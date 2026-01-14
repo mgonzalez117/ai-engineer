@@ -1,0 +1,13 @@
+name: ai-engineer-p11
+services:
+  notebooks:
+    container_name: notebooks
+    build: .
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    ports:
+      - "8888:8888"
+    command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+    stdin_open: true
+    tty: true
