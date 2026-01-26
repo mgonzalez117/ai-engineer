@@ -79,7 +79,7 @@ class ReplayBuffer:
         """
 
         # Pioche aléatoirement dans les expériences précédentes
-        # on ne fait pas dans l'ordre pour éviter à l'agent d'oublier ce qu'il a appris dans le passé ("catastrphic forgetting")
+        # on ne fait pas dans l'ordre pour éviter à l'agent d'oublier ce qu'il a appris dans le passé ("catastrophic forgetting")
         # on casse les corrélations temporelles ==> apprentissage + stable
         batch = random.sample(self.buffer, batch_size)
         
