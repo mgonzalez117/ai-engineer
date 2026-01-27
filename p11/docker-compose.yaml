@@ -9,5 +9,27 @@ services:
     ports:
       - "8888:8888"
     command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - mlflow
     stdin_open: true
     tty: true
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./.mlflow/mlruns:/mlflow/mlruns
+      - ./.mlflow/mlartifacts:/mlflow/mlartifacts
+    environment:
+      - MLFLOW_ALLOW_LISTED_HOSTS=*
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri file:///mlflow/mlruns
+      --default-artifact-root file:///mlflow/mlartifacts
+      --allowed-hosts '*'
