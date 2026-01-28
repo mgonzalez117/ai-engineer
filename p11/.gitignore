@@ -1,6 +1,8 @@
 .ipynb_checkpoints/
 __pycache__/
 logs_dqn/
+logs_ppo/
 videos_dqn/
+videos_ppo/
 .mlflow/
 .Trash-0
