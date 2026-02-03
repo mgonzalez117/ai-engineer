@@ -4,5 +4,6 @@ logs_dqn/
 logs_ppo/
 videos_dqn/
 videos_ppo/
+tensorboard_logs/
 .mlflow/
 .Trash-0

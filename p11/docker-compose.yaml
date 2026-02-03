@@ -1,7 +1,7 @@
 name: ai-engineer-p11
 services:
   notebooks:
-    container_name: notebooks
+    container_name: p11-notebooks
     build: .
     working_dir: /workspace
     volumes:
@@ -10,15 +10,45 @@ services:
       - "8888:8888"
     command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
     environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_TRACKING_URI=http://p11-mlflow:5000
     depends_on:
       - mlflow
     stdin_open: true
     tty: true
 
+  dashboard:
+    container_name: p11-dashboard
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: "http://p11-api:8000"
+      MODEL_NAME: ${MODEL_NAME}
+    command: poetry run streamlit run src/mission/gui/app.py --server.port 8501 --server.address 0.0.0.0
+    depends_on:
+      - api
+    networks:
+      - lunarlander_network
+
+  api:
+    container_name: p11-api
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: ${MODEL_PATH}
+      MODEL_NAME: ${MODEL_NAME}
+    command: poetry run uvicorn src.mission.api.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - lunarlander_network
+
   mlflow:
+    container_name: p11-mlflow
     image: ghcr.io/mlflow/mlflow:latest
-    container_name: mlflow
     ports:
       - "5000:5000"
     volumes:
@@ -33,3 +63,18 @@ services:
       --backend-store-uri file:///mlflow/mlruns
       --default-artifact-root file:///mlflow/mlartifacts
       --allowed-hosts '*'
+
+  tensorboard:
+    container_name: p11-tensorboard
+    image: tensorflow/tensorflow:2.15.0
+    command: >
+      bash -lc "pip install -q tensorboard &&
+                tensorboard --logdir /logs --host 0.0.0.0 --port 6006"
+    ports:
+      - "6006:6006"
+    volumes:
+      - ./src/mission/tensorboard_logs:/logs:ro
+    restart: unless-stopped
+
+networks:
+  lunarlander_network: ~
