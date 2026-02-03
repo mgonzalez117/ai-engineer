@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional, List, Dict
 
 class ObservationInput(BaseModel):
     """
@@ -20,7 +21,6 @@ class PredictionOutput(BaseModel):
     action: int
     action_name: str
 
-
 class ExperimentIn(BaseModel):
     """Données d'entrée pour enregistrer une expérimentation"""
     run_name: str = Field(default="streamlit_demo")
@@ -29,9 +29,14 @@ class ExperimentIn(BaseModel):
     terminated: bool
     truncated: bool
     duration_s: float
+    action_0: int = 0  # Ne rien faire
+    action_1: int = 0  # Moteur gauche
+    action_2: int = 0  # Moteur principal
+    action_3: int = 0  # Moteur droit
+    circumstances: Optional[List[Dict]] = None  # Situations critiques
 
 
 class ExperimentOut(ExperimentIn):
     """Expérimentation enregistrée avec métadonnées"""
     experiment_id: str
-    created_at: float  # epoch seconds
+    created_at: float

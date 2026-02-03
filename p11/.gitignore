@@ -5,5 +5,6 @@ logs_ppo/
 videos_dqn/
 videos_ppo/
 tensorboard_logs/
+experiments/
 .mlflow/
 .Trash-0

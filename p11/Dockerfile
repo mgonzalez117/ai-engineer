@@ -1,4 +1,3 @@
-### Dockerfile for API container
 FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y \
@@ -7,16 +6,17 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --no-cache-dir poetry
 
-WORKDIR /workspace
+# Utilise /app partout pour être raccord avec le docker-compose
+WORKDIR /app
 
+# On copie d'abord les fichiers de dépendances
 COPY pyproject.toml poetry.lock* ./
 
+# On installe SANS le lock (pour utiliser le tien) et SANS le root
 RUN poetry config virtualenvs.create false \
-    && poetry lock \
     && poetry install --no-interaction --no-ansi --no-root
 
+# On copie le reste du code
 COPY . .
 
 EXPOSE 8888
-
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token="]

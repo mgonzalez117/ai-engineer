@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException
+import statistics
 
 from .models import ExperimentIn, ExperimentOut
 
@@ -64,7 +65,9 @@ async def list_experiments(limit: int = 200):
 
 @router.get("/stats", response_model=dict)
 async def get_experiments_stats():
-    """Retourne des statistiques sur les expérimentations"""
+    """
+    Retourne les statistiques : moyenne, écart-type, min, max, taux de succès
+    """
     try:
         exps = _load_experiments()
 
@@ -72,6 +75,7 @@ async def get_experiments_stats():
             return {
                 "total_experiments": 0,
                 "avg_reward": None,
+                "std_reward": None,
                 "max_reward": None,
                 "min_reward": None,
                 "success_rate": None
@@ -80,12 +84,16 @@ async def get_experiments_stats():
         rewards = [x.get("total_reward", 0) for x in exps if x.get("total_reward") is not None]
         successes = [x for x in exps if x.get("terminated", False) and x.get("total_reward", 0) > 200]
 
+        avg_reward = sum(rewards) / len(rewards) if rewards else None
+        std_reward = statistics.stdev(rewards) if len(rewards) > 1 else 0
+
         return {
             "total_experiments": len(exps),
-            "avg_reward": sum(rewards) / len(rewards) if rewards else None,
-            "max_reward": max(rewards) if rewards else None,
-            "min_reward": min(rewards) if rewards else None,
-            "success_rate": len(successes) / len(exps) if exps else None
+            "avg_reward": round(avg_reward, 2) if avg_reward else None,
+            "std_reward": round(std_reward, 2) if std_reward else None,
+            "max_reward": round(max(rewards), 2) if rewards else None,
+            "min_reward": round(min(rewards), 2) if rewards else None,
+            "success_rate": round(len(successes) / len(exps) * 100, 2) if exps else None
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors du calcul des stats : {str(e)}")

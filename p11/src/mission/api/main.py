@@ -20,7 +20,6 @@ app.include_router(experiments_router, prefix="/experiments", tags=["Expériment
 
 # Variable globale pour stocker le modèle chargé
 model = None
-env = None
 
 # Chemin du modèle, nom de l'environnement gymnasium
 MODEL_PATH = os.getenv("MODEL_PATH")
@@ -51,17 +50,17 @@ class PredictionOutput(BaseModel):
 @app.on_event("startup")
 async def load_model():
     """Charge le modèle au démarrage de l'API"""
-    global model, env
+    global model
 
-    if not os.path.exists(MODEL_PATH):
-        raise FileNotFoundError(f"Le modèle {MODEL_PATH} n'existe pas")
+    if not MODEL_PATH or not os.path.exists(MODEL_PATH):
+        print(f"⚠️  Modèle non trouvé : {MODEL_PATH}")
+        return
 
     try:
         model = DQN.load(MODEL_PATH)
-        env = gym.make(MODEL_NAME)
         print(f"✅ Modèle chargé depuis {MODEL_PATH}")
     except Exception as e:
-        raise RuntimeError(f"Erreur lors du chargement du modèle : {e}")
+        print(f"❌ Erreur lors du chargement du modèle : {e}")
 
 
 @app.get("/")
@@ -79,7 +78,7 @@ async def health():
     """Endpoint de santé"""
     if model is None:
         raise HTTPException(status_code=503, detail="Modèle non chargé")
-    return {"status": "healthy", "model": MODEL_PATH}
+    return {"status": "healthy"}
 
 
 @app.post("/predict", response_model=PredictionOutput)
@@ -96,7 +95,6 @@ async def predict(input_data: ObservationInput):
     if model is None:
         raise HTTPException(status_code=503, detail="Modèle non chargé")
 
-    # Vérifier que l'observation a bien 8 valeurs
     if len(input_data.observation) != 8:
         raise HTTPException(
             status_code=400,
@@ -104,14 +102,10 @@ async def predict(input_data: ObservationInput):
         )
 
     try:
-        # Convertir en numpy array
         obs = np.array(input_data.observation, dtype=np.float32)
-
-        # Prédire l'action
         action, _states = model.predict(obs, deterministic=True)
         action = int(action)
 
-        # Mapper l'action à son nom
         action_names = {
             0: "Ne rien faire",
             1: "Moteur gauche",
@@ -135,7 +129,6 @@ async def model_info():
         raise HTTPException(status_code=503, detail="Modèle non chargé")
 
     return {
-        "model_path": MODEL_PATH,
         "algorithm": "DQN",
         "environment": MODEL_NAME,
         "observation_space": "Box(8,)",

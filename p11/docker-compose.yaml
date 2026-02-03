@@ -3,9 +3,9 @@ services:
   notebooks:
     container_name: p11-notebooks
     build: .
-    working_dir: /workspace
+    working_dir: /app
     volumes:
-      - ./:/workspace
+      - ./:/app
     ports:
       - "8888:8888"
     command: jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
@@ -26,7 +26,7 @@ services:
     environment:
       API_URL: "http://p11-api:8000"
       MODEL_NAME: ${MODEL_NAME}
-    command: poetry run streamlit run src/mission/gui/app.py --server.port 8501 --server.address 0.0.0.0
+    command: poetry run streamlit run src/mission/gui/app.py --server.port 8501 --server.address 0.0.0.0 --server.fileWatcherType poll
     depends_on:
       - api
     networks:
