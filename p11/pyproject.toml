@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "ai-engineer_p10"
+name = "ai-engineer_p11"
 version = "0.1.0"
-description = "AI Engineer - Labellisez et appliquez des approches semi-supervisées en traitement d'images"
+description = "AI Engineer - Entrainez votre agent RL"
 authors = ["Michaël Gonzalez <cyberalternative@gmail.com>"]
 package-mode = false
 

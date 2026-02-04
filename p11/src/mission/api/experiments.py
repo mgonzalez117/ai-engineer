@@ -24,7 +24,7 @@ def _load_experiments() -> List[Dict[str, Any]]:
         with EXPERIMENTS_PATH.open("r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        print(f"⚠️  Erreur lors du chargement des expérimentations : {e}")
+        print(f"Erreur lors du chargement des expérimentations : {e}")
         return []
 
 

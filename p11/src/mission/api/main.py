@@ -53,24 +53,14 @@ async def load_model():
     global model
 
     if not MODEL_PATH or not os.path.exists(MODEL_PATH):
-        print(f"⚠️  Modèle non trouvé : {MODEL_PATH}")
+        print(f" Modèle non trouvé : {MODEL_PATH}")
         return
 
     try:
         model = DQN.load(MODEL_PATH)
-        print(f"✅ Modèle chargé depuis {MODEL_PATH}")
+        print(f"Modèle chargé depuis {MODEL_PATH}")
     except Exception as e:
-        print(f"❌ Erreur lors du chargement du modèle : {e}")
-
-
-@app.get("/")
-async def root():
-    """Endpoint racine"""
-    return {
-        "message": "API LunarLander DQN",
-        "status": "running",
-        "model_loaded": model is not None
-    }
+        print(f"Erreur lors du chargement du modèle : {e}")
 
 
 @app.get("/health")
