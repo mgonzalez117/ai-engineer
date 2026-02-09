@@ -1,0 +1,59 @@
+name: ai-engineer-p12
+
+services:
+  notebooks:
+    container_name: p12-notebooks
+    build: .
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8888:8888"
+    command: >
+      jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+      --NotebookApp.token=''
+    stdin_open: true
+    tty: true
+
+  # Base de données cible du pipeline ETL (SQL)
+  p12-datastore:
+    image: postgres:13
+    container_name: p12-datastore
+    environment:
+      POSTGRES_USER: etl
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: etl
+    ports:
+      - "5433:5432"   # accès depuis l’hôte : localhost:5433
+    volumes:
+      - datastore-data:/var/lib/postgresql/data
+
+  # Airflow en mode standalone (webserver + scheduler + metadata DB en SQLite)
+  airflow:
+    container_name: p12-airflow
+    image: apache/airflow:2.8.1-python3.10
+    # Optionnel mais pratique sous Linux : force un UID non-root
+    user: "${AIRFLOW_UID:-50000}:0"
+    depends_on:
+      - p12-datastore
+    ports:
+      - "8080:8080"   # UI Airflow http://localhost:8080
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__EXECUTOR: "SequentialExecutor"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "sqlite:////opt/airflow/airflow.db"
+      # Pour que tes scripts puissent facilement se connecter à Postgres ETL
+      ETL_DB_HOST: "p12-datastore"
+      ETL_DB_PORT: "5432"
+      ETL_DB_NAME: "etl"
+      ETL_DB_USER: "etl"
+      ETL_DB_PASSWORD: "password"
+    volumes:
+      - ./src/airflow/dags:/opt/airflow/dags
+      - ./src/airflow/logs:/opt/airflow/logs
+      - ./src/airflow/plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
+    command: standalone
+
+volumes:
+  datastore-data:
