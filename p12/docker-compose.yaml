@@ -9,9 +9,26 @@ services:
       - ./:/app
     ports:
       - "8888:8888"
+    environment:
+      DATA_RAW_DIR: "data/raw"
+      DATA_PROCESSED_DIR: "data/processed"
     command: >
       jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
       --NotebookApp.token=''
+    stdin_open: true
+    tty: true
+
+  # Service dédié à l'extraction (Fakeddit)
+  extract:
+    container_name: p12-extract
+    build: .
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      DATA_RAW_DIR: "data/raw"
+      DATA_PROCESSED_DIR: "data/processed"
+    command: ["python", "-m", "src.extract.fakeddit.main"]
     stdin_open: true
     tty: true
 
@@ -32,7 +49,6 @@ services:
   airflow:
     container_name: p12-airflow
     image: apache/airflow:2.8.1-python3.10
-    # Optionnel mais pratique sous Linux : force un UID non-root
     user: "${AIRFLOW_UID:-50000}:0"
     depends_on:
       - p12-datastore
