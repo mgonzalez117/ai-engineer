@@ -19,16 +19,21 @@ services:
     tty: true
 
   # Service dédié à l'extraction (Fakeddit)
-  extract:
-    container_name: p12-extract
+  extract-transform:
+    container_name: p12-extract-transform
     build: .
     working_dir: /app
     volumes:
       - ./:/app
     environment:
       DATA_RAW_DIR: "data/raw"
-      DATA_PROCESSED_DIR: "data/processed"
-    command: ["python", "-m", "src.extract.fakeddit.main"]
+      DATA_PROCESSED_DIR: "data/extracted"
+      DATA_FINAL_DIR: "data/transformed"
+    command: >
+      sh -c "
+      python -m src.1-extract.fakeddit.main &&
+      python -m src.2-transform.fakeddit.pipeline_transform
+      "
     stdin_open: true
     tty: true
 
@@ -46,7 +51,7 @@ services:
       - datastore-data:/var/lib/postgresql/data
 
   # Airflow en mode standalone (webserver + scheduler + metadata DB en SQLite)
-  airflow:
+  p12-airflow:
     container_name: p12-airflow
     image: apache/airflow:2.8.1-python3.10
     user: "${AIRFLOW_UID:-50000}:0"
