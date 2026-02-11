@@ -1,0 +1,25 @@
+[2026-02-11T07:31:30.694+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: fakeddit_pipeline.extract_fakeddit manual__2026-02-11T07:31:30.188584+00:00 [queued]>
+[2026-02-11T07:31:30.699+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: fakeddit_pipeline.extract_fakeddit manual__2026-02-11T07:31:30.188584+00:00 [queued]>
+[2026-02-11T07:31:30.699+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 2
+[2026-02-11T07:31:30.705+0000] {taskinstance.py:2191} INFO - Executing <Task(BashOperator): extract_fakeddit> on 2026-02-11 07:31:30.188584+00:00
+[2026-02-11T07:31:30.708+0000] {standard_task_runner.py:60} INFO - Started process 275 to run task
+[2026-02-11T07:31:30.710+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'fakeddit_pipeline', 'extract_fakeddit', 'manual__2026-02-11T07:31:30.188584+00:00', '--job-id', '9', '--raw', '--subdir', 'DAGS_FOLDER/fakeddit_pipeline.py', '--cfg-path', '/tmp/tmp4g8gmodn']
+[2026-02-11T07:31:30.711+0000] {standard_task_runner.py:88} INFO - Job 9: Subtask extract_fakeddit
+[2026-02-11T07:31:30.735+0000] {task_command.py:423} INFO - Running <TaskInstance: fakeddit_pipeline.extract_fakeddit manual__2026-02-11T07:31:30.188584+00:00 [running]> on host 457d2279c245
+[2026-02-11T07:31:30.775+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='p12' AIRFLOW_CTX_DAG_ID='fakeddit_pipeline' AIRFLOW_CTX_TASK_ID='extract_fakeddit' AIRFLOW_CTX_EXECUTION_DATE='2026-02-11T07:31:30.188584+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-02-11T07:31:30.188584+00:00'
+[2026-02-11T07:31:30.776+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-02-11T07:31:30.776+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', 'python -m src.1-extract.fakeddit.main']
+[2026-02-11T07:31:30.781+0000] {subprocess.py:86} INFO - Output:
+[2026-02-11T07:31:30.797+0000] {subprocess.py:93} INFO - /usr/local/bin/python: Error while finding module specification for 'src.1-extract.fakeddit.main' (ModuleNotFoundError: No module named 'src')
+[2026-02-11T07:31:30.799+0000] {subprocess.py:97} INFO - Command exited with return code 1
+[2026-02-11T07:31:30.806+0000] {taskinstance.py:2698} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.10/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+    result = execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.10/site-packages/airflow/operators/bash.py", line 212, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-02-11T07:31:30.807+0000] {taskinstance.py:1138} INFO - Marking task as UP_FOR_RETRY. dag_id=fakeddit_pipeline, task_id=extract_fakeddit, execution_date=20260211T073130, start_date=20260211T073130, end_date=20260211T073130
+[2026-02-11T07:31:30.815+0000] {standard_task_runner.py:107} ERROR - Failed to execute job 9 for task extract_fakeddit (Bash command failed. The command returned a non-zero exit code 1.; 275)
+[2026-02-11T07:31:30.842+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 1
+[2026-02-11T07:31:30.854+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

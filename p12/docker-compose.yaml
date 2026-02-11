@@ -1,7 +1,7 @@
 name: ai-engineer-p12
 
 services:
-  notebooks:
+  p12-notebooks:
     container_name: p12-notebooks
     build: .
     working_dir: /app
@@ -10,25 +10,26 @@ services:
     ports:
       - "8888:8888"
     environment:
-      DATA_RAW_DIR: "data/raw"
-      DATA_PROCESSED_DIR: "data/processed"
+      DATA_RAW_DIR: ${DATA_RAW_DIR}
+      DATA_PROCESSED_DIR: ${DATA_PROCESSED_DIR}
     command: >
       jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
       --NotebookApp.token=''
     stdin_open: true
     tty: true
 
-  # Service dédié à l'extraction (Fakeddit)
-  extract-transform:
+  p12-extract-transform:
     container_name: p12-extract-transform
     build: .
     working_dir: /app
     volumes:
       - ./:/app
     environment:
-      DATA_RAW_DIR: "data/raw"
-      DATA_PROCESSED_DIR: "data/extracted"
-      DATA_FINAL_DIR: "data/transformed"
+      DATA_RAW_DIR: ${DATA_RAW_DIR}
+      DATA_PROCESSED_DIR: ${DATA_PROCESSED_DIR}
+      DATA_FINAL_DIR: ${DATA_FINAL_DIR}
+    networks:
+      - p12_network
     command: >
       sh -c "
       python -m src.1-extract.fakeddit.main &&
@@ -37,20 +38,21 @@ services:
     stdin_open: true
     tty: true
 
-  # Base de données cible du pipeline ETL (SQL)
   p12-datastore:
     image: postgres:13
     container_name: p12-datastore
     environment:
-      POSTGRES_USER: etl
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: etl
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"   # accès depuis l’hôte : localhost:5433
+      - "5433:5432"
+    networks:
+      - p12_network
     volumes:
       - datastore-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
 
-  # Airflow en mode standalone (webserver + scheduler + metadata DB en SQLite)
   p12-airflow:
     container_name: p12-airflow
     image: apache/airflow:2.8.1-python3.10
@@ -58,23 +60,43 @@ services:
     depends_on:
       - p12-datastore
     ports:
-      - "8080:8080"   # UI Airflow http://localhost:8080
+      - "8080:8080"
     environment:
-      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
-      AIRFLOW__CORE__EXECUTOR: "SequentialExecutor"
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "sqlite:////opt/airflow/airflow.db"
-      # Pour que tes scripts puissent facilement se connecter à Postgres ETL
-      ETL_DB_HOST: "p12-datastore"
-      ETL_DB_PORT: "5432"
-      ETL_DB_NAME: "etl"
-      ETL_DB_USER: "etl"
-      ETL_DB_PASSWORD: "password"
+      AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW_LOAD_EXAMPLES}
+      AIRFLOW__CORE__EXECUTOR: ${AIRFLOW_EXECUTOR}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW_SQL_ALCHEMY_CONN}
+      ETL_DB_HOST: ${ETL_DB_HOST}
+      ETL_DB_PORT: ${ETL_DB_PORT}
+      ETL_DB_NAME: ${ETL_DB_NAME}
+      ETL_DB_USER: ${ETL_DB_USER}
+      ETL_DB_PASSWORD: ${ETL_DB_PASSWORD}
     volumes:
-      - ./src/airflow/dags:/opt/airflow/dags
-      - ./src/airflow/logs:/opt/airflow/logs
-      - ./src/airflow/plugins:/opt/airflow/plugins
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
       - ./data:/opt/airflow/data
+    networks:
+      - p12_network
     command: standalone
+
+  p12-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: p12-pgadmin
+    depends_on:
+      - p12-datastore
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    networks:
+      - p12_network
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
 
 volumes:
   datastore-data:
+  pgadmin-data:
+
+networks:
+  p12_network: ~
