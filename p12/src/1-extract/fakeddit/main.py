@@ -1,6 +1,12 @@
 import os
 import json
+import time
 from pathlib import Path
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from src.models.models import EtlMetrics
 
 from .download import download_fakeddit
 from .extract import iter_tsv, extract_record
@@ -11,6 +17,7 @@ def raw_data_exists(path: Path) -> bool:
 
 
 def main():
+    start_time = time.time()
 
     raw_dir = Path(os.getenv("DATA_RAW_DIR", "data/raw"))
     processed_dir = Path(os.getenv("DATA_PROCESSED_DIR", "data/processed"))
@@ -56,10 +63,36 @@ def main():
             out.write(json.dumps(item, ensure_ascii=False) + "\n")
             count_out += 1
 
+    duration = time.time() - start_time
+    rows_per_sec = count_out / duration if duration > 0 else 0
+
     print(f"Read: {count_in}")
     print(f"Wrote: {count_out}")
     print(f"Rejected: {count_rejected}")
     print(f"→ rejected log: {log_path}")
+
+    # Log metrics ONLY when executed by Airflow
+    if os.getenv("AIRFLOW_CTX_DAG_ID"):
+        engine = create_engine(os.environ["AIRFLOW__DATABASE__SQL_ALCHEMY_CONN"])
+        Session = sessionmaker(bind=engine)
+
+        with Session() as session:
+            metric = EtlMetrics(
+                pipeline_name=os.getenv("AIRFLOW_CTX_DAG_ID", "fakeddit_pipeline"),
+                step="extract",
+                run_id=os.getenv("AIRFLOW_CTX_DAG_RUN_ID"),
+                execution_date=os.getenv("AIRFLOW_CTX_EXECUTION_DATE"),
+                nb_input=count_in,
+                nb_output=count_out,
+                nb_rejected=count_rejected,
+                duration_seconds=duration,
+                rows_per_second=rows_per_sec,
+                success=True,
+            )
+            session.add(metric)
+            session.commit()
+    else:
+        print("[fakeddit] Not an Airflow run: skipping etl_metrics insert")
 
 
 if __name__ == "__main__":
