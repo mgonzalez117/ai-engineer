@@ -1,0 +1,15 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# deps système minimales (psycopg2-binary évite libpq, mais garde build tools light)
+RUN pip install --no-cache-dir --upgrade pip
+
+# Sinon, install minimal pour dashboard
+RUN pip install --no-cache-dir streamlit sqlalchemy psycopg2-binary pandas
+
+COPY . /app
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "src/dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8501"]

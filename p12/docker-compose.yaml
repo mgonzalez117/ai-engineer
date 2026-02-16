@@ -95,6 +95,27 @@ services:
     volumes:
       - pgadmin-data:/var/lib/pgadmin
 
+  p12-dashboard:
+    container_name: p12-dashboard
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8501:8501"
+    depends_on:
+      - p12-datastore
+    environment:
+      # Reprend la même variable que ton code ETL/Airflow pour se connecter à Postgres
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW_SQL_ALCHEMY_CONN}
+      # optionnel si ton dashboard lit aussi ces dossiers
+      DATA_FINAL_DIR: ${DATA_FINAL_DIR}
+    networks:
+      - p12_network
+
+
 volumes:
   datastore-data:
   pgadmin-data:
