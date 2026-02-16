@@ -71,6 +71,7 @@ services:
       ETL_DB_USER: ${ETL_DB_USER}
       ETL_DB_PASSWORD: ${ETL_DB_PASSWORD}
     volumes:
+      - ./:/app
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
