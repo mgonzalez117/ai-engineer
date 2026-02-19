@@ -15,8 +15,7 @@ L’objectif du monitoring est de garantir :
 - la fiabilité d’exécution  
 - la qualité des données  
 - la performance du traitement  
-- la traçabilité des runs  
-- l’extensibilité à de nouvelles sources  
+- la traçabilité des runs
 
 ---
 
@@ -88,7 +87,7 @@ Objectifs :
 
 - **duration_seconds**
 - **rows_per_second**
-- Moyenne et p95 des durées
+- Moyenne des durées
 
 Objectifs :
 
@@ -110,12 +109,12 @@ Objectifs :
 
 Les seuils suivants sont définis à titre indicatif :
 
-| Indicateur | Condition | Action |
-|------------|-----------|--------|
-| nb_output = 0 | Aucune donnée produite | Analyse immédiate |
-| Taux de validité < 98% | Rejets anormalement élevés | Vérification transform |
-| duration_seconds > 2× moyenne historique | Dégradation performance | Vérifier base / batch |
-| 2 runs consécutifs en échec | Instabilité | Analyse technique |
+| Indicateur                                 | Condition | Action |
+|--------------------------------------------|-----------|--------|
+| nb_output = 0                              | Aucune donnée produite | Analyse immédiate |
+| Taux de validité < 98%                     | Rejets anormalement élevés | Vérification transform |
+| duration_seconds > 1,5× moyenne historique | Dégradation performance | Vérifier base / batch |
+| 2 runs consécutifs en échec                | Instabilité | Analyse technique |
 
 Ces seuils peuvent être ajustés en fonction des volumes propres à chaque source.
 

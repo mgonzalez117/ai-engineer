@@ -120,10 +120,15 @@ Arrêt :
 
 ------------------------------------------------------------------------
 
-## 5. Données d'origine
+## 5. Données
 
 Les données principales provenant des datasets choisis (notamment Fakeeddit) sont téléchargées dans `data/raw` lors du premier lancement.
 Elles ne sont pas retéléchargées si déjà présentes.
+
+### Modèle de publication
+
+Le modèle de publication assure un format de données neutre permettant l'étape `load` pour toutes les sources de données retenues.
+il est disponible dans `./Modèle publication.pdf`
 
 ------------------------------------------------------------------------
 
@@ -137,15 +142,19 @@ Elles ne sont pas retéléchargées si déjà présentes.
      ├── dashboard/     # code avec app.py pour le dashboard
      ├── models/        # modèles SQLAlchemy pour intéragir avec la base de données
 
-
-
     airflow/    # pipelines airflow
     postgres/   # SQL d'initialisation de la base de données
     data/       # données de travail
 
 ------------------------------------------------------------------------
 
-## 7. Bilan
+## 7. Monitoring
+
+Le plan de monitoring est disponible dans `monitoring.md`
+
+------------------------------------------------------------------------
+
+## 8. Bilan
 
 Cette architecture permet :
 

@@ -1,0 +1,10 @@
+name: ai-engineer-p13
+services:
+  p13-api:
+    container_name: p13-api
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: poetry run uvicorn src.backend.api.main:app --host 0.0.0.0 --port 8000 --reload

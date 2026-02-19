@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "ai-engineer_p13"
+version = "0.1.0"
+description = "AI Engineer - Mettez en place un agent IA"
+authors = ["Michaël Gonzalez <cyberalternative@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.15"
+pandas = "^2.3.2"
+matplotlib = "^3.10.6"
+seaborn = "^0.13.2"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version = "^0.30.0"}

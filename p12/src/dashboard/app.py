@@ -9,12 +9,12 @@ from sqlalchemy import create_engine, text
 # Config UI
 # ----------------------------
 st.set_page_config(
-    page_title="P12 • ETL KPI Dashboard",
+    page_title="ETL KPI Dashboard",
     page_icon="📊",
     layout="wide",
 )
 
-st.title("📊 P12 • ETL KPI Dashboard")
+st.title("📊ETL KPI Dashboard")
 st.caption("KPI de pipeline basés sur la table `etl_metrics` (Airflow reste la source de vérité pour l’orchestration).")
 
 
@@ -244,7 +244,7 @@ df_table = df_table[cols]
 
 st.dataframe(df_table, use_container_width=True, height=420)
 
-# Export CSV (utile pour ton rendu)
+# Export CSV
 csv = df_table.to_csv(index=False).encode("utf-8")
 st.download_button(
     "Télécharger CSV (runs filtrés)",
