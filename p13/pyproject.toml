@@ -12,3 +12,6 @@ matplotlib = "^3.10.6"
 seaborn = "^0.13.2"
 fastapi = "^0.115.0"
 uvicorn = {extras = ["standard"], version = "^0.30.0"}
+python-chess = "^1.999"
+stockfish = "^4.0.8"
+chess = "^1.11.2"
