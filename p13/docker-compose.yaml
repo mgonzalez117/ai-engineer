@@ -10,3 +10,17 @@ services:
     environment:
       - PYTHONPATH=/app/src
     command: poetry run uvicorn src.backend.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  p13-milvus:
+    container_name: p13-milvus
+    image: milvusdb/milvus:v2.3.9
+    command: [ "milvus", "run", "standalone" ]
+    environment:
+      - ETCD_USE_EMBED=true
+      - MINIO_USE_EMBED=true
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - ./.data/milvus:/var/lib/milvus
+    restart: unless-stopped
