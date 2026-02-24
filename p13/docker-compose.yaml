@@ -9,18 +9,71 @@ services:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app/src
+      - DATA_DIR=.data
+      - MILVUS_HOST=p13-milvus
+      - MILVUS_PORT=19530
     command: poetry run uvicorn src.backend.api.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - p13-milvus
+    networks:
+      - p13_network
+
+  p13-etcd:
+    container_name: p13-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    command: >
+      etcd
+      --advertise-client-urls=http://0.0.0.0:2379
+      --listen-client-urls=http://0.0.0.0:2379
+      --data-dir=/etcd
+    volumes:
+      - ./.data/etcd:/etcd
+    networks:
+      - p13_network
+
+  p13-minio:
+    container_name: p13-minio
+    image: minio/minio:RELEASE.2024-01-16T16-07-38Z
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: minio server /minio_data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./.data/minio:/minio_data
+    networks:
+      - p13_network
 
   p13-milvus:
     container_name: p13-milvus
     image: milvusdb/milvus:v2.3.9
-    command: [ "milvus", "run", "standalone" ]
+    command: ["milvus", "run", "standalone"]
     environment:
-      - ETCD_USE_EMBED=true
-      - MINIO_USE_EMBED=true
+      - ETCD_ENDPOINTS=p13-etcd:2379
+      - MINIO_ADDRESS=p13-minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_USE_SSL=false
+      - LOG_LEVEL=info
     ports:
       - "19530:19530"
       - "9091:9091"
     volumes:
       - ./.data/milvus:/var/lib/milvus
+    depends_on:
+      - p13-etcd
+      - p13-minio
     restart: unless-stopped
+    networks:
+      - p13_network
+
+networks:
+  p13_network:
+    driver: bridge
