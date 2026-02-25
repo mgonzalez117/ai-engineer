@@ -1,6 +1,6 @@
 import os
-from backend.rag.wikichess_scrap import main as scrape_main
-from backend.rag.embeddings import main as embeddings_main
+from backend.service.rag.ingest.wikichess_scrap import main as scrap_main
+from backend.service.rag.ingest.embed import main as embed_main
 
 
 DATA_DIR = os.getenv("DATA_DIR", ".data")
@@ -16,10 +16,10 @@ def main(force_scrape: bool = False):
         print("Fichier chunks déjà présent -> skip scraping")
     else:
         print("===== ETAPE 1 : SCRAP WIKICHESS =====")
-        scrape_main()
+        scrap_main()
 
     print("\n===== ETAPE 2 : EMBEDDING + INDEXATION =====")
-    embeddings_main()
+    embed_main()
 
     print("\nPipeline terminé avec succès.")
 

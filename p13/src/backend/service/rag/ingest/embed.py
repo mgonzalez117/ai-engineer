@@ -2,7 +2,6 @@ import json
 import os
 import time
 
-from sentence_transformers import SentenceTransformer
 from pymilvus import (
     connections,
     utility,
@@ -12,6 +11,7 @@ from pymilvus import (
     DataType,
 )
 
+from backend.service.rag.embeddings import embed_texts
 
 DATA_DIR = os.getenv("DATA_DIR", ".data")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
@@ -19,8 +19,7 @@ PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 MILVUS_HOST = os.getenv("MILVUS_HOST", "p13-milvus")
 MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
 
-COLLECTION = "wikichess"
-MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+COLLECTION = os.getenv("MILVUS_COLLECTION", "wikichess")
 
 
 def connect_milvus_grpc(host: str, port: str, retries: int = 30, delay_s: float = 1.0):
@@ -49,10 +48,10 @@ def main():
     print(f"{len(rows)} chunks chargés")
 
     print("Embedding...")
-    model = SentenceTransformer(MODEL_NAME)
-
     texts = [r["text"] for r in rows]
-    vectors = model.encode(texts, normalize_embeddings=True, show_progress_bar=True)
+
+    embeddings = embed_texts(texts, show_progress_bar=True)  # List[List[float]]
+    dim = len(embeddings[0])
 
     print("Connexion Milvus (gRPC)...")
     connect_milvus_grpc(MILVUS_HOST, MILVUS_PORT)
@@ -63,7 +62,7 @@ def main():
             FieldSchema(name="id", dtype=DataType.VARCHAR, is_primary=True, max_length=64),
             FieldSchema(name="url", dtype=DataType.VARCHAR, max_length=512),
             FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535),
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=len(vectors[0])),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=dim),
         ]
         schema = CollectionSchema(fields, description="Wikichess chunks")
         collection = Collection(name=COLLECTION, schema=schema)
@@ -83,7 +82,6 @@ def main():
     ids = [r["id"] for r in rows]
     urls = [r["url"] for r in rows]
     texts = [r["text"] for r in rows]
-    embeddings = [v.tolist() for v in vectors]
 
     collection.insert([ids, urls, texts, embeddings])
     collection.load()  # utile pour la recherche

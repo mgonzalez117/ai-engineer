@@ -12,6 +12,7 @@ services:
       - DATA_DIR=.data
       - MILVUS_HOST=p13-milvus
       - MILVUS_PORT=19530
+      - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
     command: poetry run uvicorn src.backend.api.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - p13-milvus
