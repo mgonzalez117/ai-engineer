@@ -154,7 +154,6 @@ def main():
 
         text = extract_article_text(html)
 
-        # ✅ Ne skippe pas les pages "courtes" si elles contiennent de la metadata Wikichess utile
         if len(text) < 200 and not any(m in text for m in WIKICHESS_MARKERS):
             print("  -> contenu trop court après extraction (et pas de markers), skip")
             time.sleep(REQUEST_DELAY)
