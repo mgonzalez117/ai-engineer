@@ -2,9 +2,11 @@ name: ai-engineer-p13
 services:
   p13-api:
     container_name: p13-api
-    build: .
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
     volumes:
-      - .:/app
+      - ./backend:/app
     ports:
       - "8000:8000"
     environment:
@@ -14,11 +16,29 @@ services:
       - MILVUS_PORT=19530
       - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
-    command: poetry run uvicorn src.backend.api.main:app --host 0.0.0.0 --port 8000 --reload
+    command: poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - p13-milvus
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     networks:
       - p13_network
+
+  p13-client:
+    container_name: p13-client
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    ports:
+      - "3200:3200"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run start -- --host 0.0.0.0 --port 3200
 
   p13-etcd:
     container_name: p13-etcd

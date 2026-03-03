@@ -1,0 +1,77 @@
+/* ====== PIECES TRIMMED ====== */
+
+.trimmed piece {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* WHITE */
+
+.trimmed piece.white.king {
+  background-image: url('/assets/pieces/trimmed/White-King.png');
+}
+
+.trimmed piece.white.queen {
+  background-image: url('/assets/pieces/trimmed/White-Queen.png');
+}
+
+.trimmed piece.white.rook {
+  background-image: url('/assets/pieces/trimmed/White-Rook.png');
+}
+
+.trimmed piece.white.bishop {
+  background-image: url('/assets/pieces/trimmed/White-Bishop.png');
+}
+
+.trimmed piece.white.knight {
+  background-image: url('/assets/pieces/trimmed/White-Knight.png');
+}
+
+.trimmed piece.white.pawn {
+  background-image: url('/assets/pieces/trimmed/White-Pawn.png');
+}
+
+
+/* BLACK */
+
+.trimmed piece.black.king {
+  background-image: url('/assets/pieces/trimmed/Black-King.png');
+}
+
+.trimmed piece.black.queen {
+  background-image: url('/assets/pieces/trimmed/Black-Queen.png');
+}
+
+.trimmed piece.black.rook {
+  background-image: url('/assets/pieces/trimmed/Black-Rook.png');
+}
+
+.trimmed piece.black.bishop {
+  background-image: url('/assets/pieces/trimmed/Black-Bishop.png');
+}
+
+.trimmed piece.black.knight {
+  background-image: url('/assets/pieces/trimmed/Black-Knight.png');
+}
+
+.trimmed piece.black.pawn {
+  background-image: url('/assets/pieces/trimmed/Black-Pawn.png');
+}
+
+/* Autoriser le dépassement */
+.trimmed .cg-wrap,
+.trimmed .cg-board {
+  overflow: visible !important;
+}
+
+/* Agrandir la "boîte" de la pièce pour laisser vivre le PNG 3D */
+.trimmed piece {
+  width: 12% !important;
+  height: 12% !important;
+
+  background-size: 12% auto;     /* pas full size */
+  background-repeat: no-repeat;
+  background-position: 50% 65%;  /* pousse un peu vers le bas */
+  z-index: 2;
+}

@@ -1,0 +1,61 @@
+/* ====== PIECES TOURNAMENT ====== */
+
+
+.tournament piece {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* WHITE */
+
+.tournament piece.white.king {
+  background-image: url('/assets/pieces/tournament/White-King.png');
+}
+
+.tournament piece.white.queen {
+  background-image: url('/assets/pieces/tournament/White-Queen.png');
+}
+
+.tournament piece.white.rook {
+  background-image: url('/assets/pieces/tournament/White-Rook.png');
+}
+
+.tournament piece.white.bishop {
+  background-image: url('/assets/pieces/tournament/White-Bishop.png');
+}
+
+.tournament piece.white.knight {
+  background-image: url('/assets/pieces/tournament/White-Knight.png');
+}
+
+.tournament piece.white.pawn {
+  background-image: url('/assets/pieces/tournament/White-Pawn.png');
+}
+
+
+/* BLACK */
+
+.tournament piece.black.king {
+  background-image: url('/assets/pieces/tournament/Black-King.png');
+}
+
+.tournament piece.black.queen {
+  background-image: url('/assets/pieces/tournament/Black-Queen.png');
+}
+
+.tournament piece.black.rook {
+  background-image: url('/assets/pieces/tournament/Black-Rook.png');
+}
+
+.tournament piece.black.bishop {
+  background-image: url('/assets/pieces/tournament/Black-Bishop.png');
+}
+
+.tournament piece.black.knight {
+  background-image: url('/assets/pieces/tournament/Black-Knight.png');
+}
+
+.tournament piece.black.pawn {
+  background-image: url('/assets/pieces/tournament/Black-Pawn.png');
+}

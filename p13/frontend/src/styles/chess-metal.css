@@ -1,0 +1,61 @@
+/* ====== PIECES TOURNAMENT ====== */
+
+
+.metal piece {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* WHITE */
+
+.metal piece.white.king {
+  background-image: url('/assets/pieces/metal/White-King.png');
+}
+
+.metal piece.white.queen {
+  background-image: url('/assets/pieces/metal/White-Queen.png');
+}
+
+.metal piece.white.rook {
+  background-image: url('/assets/pieces/metal/White-Rook.png');
+}
+
+.metal piece.white.bishop {
+  background-image: url('/assets/pieces/metal/White-Bishop.png');
+}
+
+.metal piece.white.knight {
+  background-image: url('/assets/pieces/metal/White-Knight.png');
+}
+
+.metal piece.white.pawn {
+  background-image: url('/assets/pieces/metal/White-Pawn.png');
+}
+
+
+/* BLACK */
+
+.metal piece.black.king {
+  background-image: url('/assets/pieces/metal/Black-King.png');
+}
+
+.metal piece.black.queen {
+  background-image: url('/assets/pieces/metal/Black-Queen.png');
+}
+
+.metal piece.black.rook {
+  background-image: url('/assets/pieces/metal/Black-Rook.png');
+}
+
+.metal piece.black.bishop {
+  background-image: url('/assets/pieces/metal/Black-Bishop.png');
+}
+
+.metal piece.black.knight {
+  background-image: url('/assets/pieces/metal/Black-Knight.png');
+}
+
+.metal piece.black.pawn {
+  background-image: url('/assets/pieces/metal/Black-Pawn.png');
+}
