@@ -25,6 +25,22 @@ def validate_fen_node(state: AgentState) -> AgentState:
         return {"error": f"FEN invalide: {e}"}
     return {}
 
+def _build_query_from_fen(fen: str) -> str:
+    board = chess.Board(fen)
+
+    # Position initiale exacte
+    if fen == chess.STARTING_FEN:
+        return "starting position chess opening principles"
+
+    # Début de partie
+    if board.fullmove_number <= 4:
+        return "chess opening first moves"
+
+    # Milieu de partie approximatif
+    if board.fullmove_number <= 12:
+        return "chess middlegame plan"
+
+    return "chess positional plan"
 
 async def get_theoretical_moves_node(state: AgentState) -> AgentState:
     if state.get("error"):
@@ -65,11 +81,8 @@ def search_milvus_node(state: AgentState) -> AgentState:
     if state.get("error"):
         return {}
 
-    # Minimal et utile :
-    # - si on a des coups théoriques, on interroge sur "chess opening"
-    # - sinon idem, on reste générique
-    # Plus tard on pourra améliorer avec un vrai nom d'ouverture.
-    query = "chess opening"
+    fen = state["fen"]
+    query = _build_query_from_fen(fen)
 
     try:
         context = search_chunks(query=query, top_k=5)
@@ -83,12 +96,12 @@ def search_youtube_node(state: AgentState) -> AgentState:
     if state.get("error"):
         return {}
 
-    # Même logique minimale : requête générique stable
-    opening = "chess opening"
+    fen = state["fen"]
+    query = _build_query_from_fen(fen)
 
     try:
         youtube = YouTubeService()
-        videos = youtube.search_videos(opening=opening, max_results=5)
+        videos = youtube.search_videos(opening=query, max_results=5)
     except YouTubeServiceError as e:
         return _add_warning(state, f"YouTube indisponible: {e}")
     except Exception as e:
