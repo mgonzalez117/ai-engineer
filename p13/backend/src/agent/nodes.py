@@ -7,6 +7,8 @@ import chess
 from agent.state import AgentState
 from service.lichess.lichess import LichessService, LichessError
 from service.stockfish.stockfish import StockfishService, StockfishError
+from service.rag.vector_search import search_chunks
+from service.youtube.youtube import YouTubeService, YouTubeServiceError
 
 
 def _add_warning(state: AgentState, msg: str) -> AgentState:
@@ -44,7 +46,7 @@ async def get_theoretical_moves_node(state: AgentState) -> AgentState:
     return {"theory_moves": []}
 
 
-async def evaluate_stockfish_node(state: AgentState) -> AgentState:
+def evaluate_stockfish_node(state: AgentState) -> AgentState:
     if state.get("error"):
         return {}
 
@@ -52,15 +54,50 @@ async def evaluate_stockfish_node(state: AgentState) -> AgentState:
 
     try:
         sf = StockfishService()
-        evaluation: dict[str, Any] = sf.evaluate_fen(fen)  # <-- adapte si besoin
+        evaluation: dict[str, Any] = sf.evaluate_fen(fen)
     except StockfishError as e:
         return {"error": f"Stockfish error: {e}"}
 
     return {"evaluation": evaluation, "source": "stockfish"}
 
 
+def search_milvus_node(state: AgentState) -> AgentState:
+    if state.get("error"):
+        return {}
+
+    # Minimal et utile :
+    # - si on a des coups théoriques, on interroge sur "chess opening"
+    # - sinon idem, on reste générique
+    # Plus tard on pourra améliorer avec un vrai nom d'ouverture.
+    query = "chess opening"
+
+    try:
+        context = search_chunks(query=query, top_k=5)
+    except Exception as e:
+        return _add_warning(state, f"Milvus indisponible: {e}")
+
+    return {"context": context or []}
+
+
+def search_youtube_node(state: AgentState) -> AgentState:
+    if state.get("error"):
+        return {}
+
+    # Même logique minimale : requête générique stable
+    opening = "chess opening"
+
+    try:
+        youtube = YouTubeService()
+        videos = youtube.search_videos(opening=opening, max_results=5)
+    except YouTubeServiceError as e:
+        return _add_warning(state, f"YouTube indisponible: {e}")
+    except Exception as e:
+        return _add_warning(state, f"YouTube indisponible: {e}")
+
+    return {"videos": videos or []}
+
+
 def compose_response_node(state: AgentState) -> AgentState:
-    # erreur bloquante
     if state.get("error"):
         return {
             "final": {
@@ -68,6 +105,8 @@ def compose_response_node(state: AgentState) -> AgentState:
                 "source": None,
                 "recommendations": [],
                 "evaluation": None,
+                "context": [],
+                "videos": [],
                 "warnings": state.get("warnings", []),
                 "error": state["error"],
             }
@@ -78,6 +117,8 @@ def compose_response_node(state: AgentState) -> AgentState:
         "source": state.get("source"),
         "recommendations": state.get("theory_moves", []),
         "evaluation": state.get("evaluation"),
+        "context": state.get("context", []),
+        "videos": state.get("videos", []),
         "warnings": state.get("warnings", []),
         "error": None,
     }

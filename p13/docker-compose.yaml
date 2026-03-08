@@ -16,6 +16,7 @@ services:
       - MILVUS_PORT=19530
       - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
       - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - MILVUS_COLLECTION=${MILVUS_COLLECTION}
     command: poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - p13-milvus
@@ -84,6 +85,7 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_USE_SSL=false
       - LOG_LEVEL=info
+      - MILVUS_COLLECTION=${MILVUS_COLLECTION}
     ports:
       - "19530:19530"
       - "9091:9091"

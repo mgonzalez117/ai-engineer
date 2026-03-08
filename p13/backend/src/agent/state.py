@@ -9,6 +9,8 @@ class AgentState(TypedDict, total=False):
     # Résultats
     theory_moves: list[dict[str, Any]]
     evaluation: dict[str, Any]
+    context: list[dict[str, Any]]
+    videos: list[dict[str, Any]]
 
     # Métadonnées
     source: Optional[Literal["lichess", "stockfish"]]

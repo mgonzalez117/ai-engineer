@@ -7,19 +7,20 @@ from agent.nodes import (
     validate_fen_node,
     get_theoretical_moves_node,
     evaluate_stockfish_node,
+    search_milvus_node,
+    search_youtube_node,
     compose_response_node,
 )
 
-# Singleton
 _GRAPH = None
 
+
 def _route_after_moves(state: AgentState) -> str:
-    # Si FEN invalide => on compose directement (final avec error)
     if state.get("error"):
         return "compose"
 
     moves = state.get("theory_moves", [])
-    return "compose" if moves else "evaluate"
+    return "milvus" if moves else "evaluate"
 
 
 def _build_graph():
@@ -28,6 +29,8 @@ def _build_graph():
     g.add_node("validate", validate_fen_node)
     g.add_node("moves", get_theoretical_moves_node)
     g.add_node("evaluate", evaluate_stockfish_node)
+    g.add_node("milvus", search_milvus_node)
+    g.add_node("youtube", search_youtube_node)
     g.add_node("compose", compose_response_node)
 
     g.set_entry_point("validate")
@@ -38,11 +41,14 @@ def _build_graph():
         _route_after_moves,
         {
             "evaluate": "evaluate",
+            "milvus": "milvus",
             "compose": "compose",
         },
     )
 
-    g.add_edge("evaluate", "compose")
+    g.add_edge("evaluate", "milvus")
+    g.add_edge("milvus", "youtube")
+    g.add_edge("youtube", "compose")
     g.add_edge("compose", END)
 
     return g.compile()
