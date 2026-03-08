@@ -16,26 +16,42 @@ class LichessService:
     """
     Service d'accès à l'Opening Explorer Lichess.
     """
+
     base_url: str = os.getenv("LICHESS_EXPLORER_BASE_URL", "https://explorer.lichess.ovh")
     timeout_s: float = float(os.getenv("LICHESS_TIMEOUT_S", "5.0"))
+    api_key: str | None = os.getenv("LICHESS_API_KEY")
 
     async def get_theoretical_moves(self, fen: str, variant: str = "standard") -> list[dict[str, Any]]:
         url = f"{self.base_url}/masters"
         params = {"fen": fen, "variant": variant}
 
+        headers = {
+            "User-Agent": "openclassrooms-chess-agent/1.0",
+            "Accept": "application/json",
+        }
+
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
         try:
             async with httpx.AsyncClient(timeout=self.timeout_s, trust_env=False) as client:
-                r = await client.get(url, params=params)
+                r = await client.get(
+                    url,
+                    params=params,
+                    headers=headers,
+                )
         except httpx.TimeoutException as e:
             raise LichessError(f"Lichess timeout: {e}") from e
         except httpx.RequestError as e:
             raise LichessError(f"Lichess request error: {e}") from e
 
+        if r.status_code == 401:
+            raise LichessError("Lichess 401: API key invalide ou manquante.")
+
         if r.status_code == 429:
             raise LichessError("Lichess rate limit (429).")
 
         if r.status_code >= 400:
-            # évite de spammer des pages HTML entières dans le detail
             body_head = (r.text or "")[:300].replace("\n", " ").replace("\r", " ")
             raise LichessError(f"Lichess error {r.status_code} on {url}: {body_head}")
 
