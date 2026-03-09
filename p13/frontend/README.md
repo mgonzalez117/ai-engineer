@@ -1,27 +1,115 @@
-# P13Client
+# Projet 13 - Mettez en place un Agent IA
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
+Proof of Concept d'un agent IA pour l'apprentissage des ouvertures aux
+échecs réalisé dans le cadre de la formation **AI Engineer --
+OpenClassrooms**.
 
-## Development server
+L'application aide les joueurs à apprendre les ouvertures en combinant :
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+-   les coups théoriques issus de l'API **Lichess**
+-   l'évaluation de position via **Stockfish**
+-   du contexte provenant de **Wikichess** via une recherche vectorielle
+    (RAG)
+-   des **vidéos YouTube** explicatives pertinentes
 
-## Code scaffolding
+Le système est composé de deux parties principales : 
+* un **backend Python (FastAPI)** 
+* un **frontend Angular** avec un échiquier interactif.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+------------------------------------------------------------------------
 
-## Build
+# Structure du projet
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+Le projet est organisé en deux parties principales.
 
-## Running unit tests
+## Backend
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Le backend est une application **FastAPI** qui implémente l'agent IA et
+ses différents services.
 
-## Running end-to-end tests
+Structure principale :
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+```text
+backend/src 
+  ├─ agent/ # Agent IA, implémenté avec LangChain.
+  ├─ api/ # Endpoints FastAPI (routes HTTP) pour interfacer l'agent
+  ├─ service/ # Logique métier et intégrations externes 
+  ├─ rag/ # Ingestion des données et recherche vectorielle
+```
 
-## Further help
+### Responsabilités
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+**Couche API (`api/`)** 
+  * Expose les endpoints REST utilisés par le frontend.
+
+**Couche Service (`service/`)** 
+  * Contient la logique métier et les intégrations : 
+    * API **Lichess** (coups d'ouverture théoriques) 
+    * **Stockfish** (évaluation de position) 
+    * API **YouTube** (vidéos pédagogiques) 
+    * **Milvus** (base vectorielle pour le RAG)
+
+Cette séparation permet de garder une API légère et une logique métier
+bien organisée.
+
+------------------------------------------------------------------------
+
+## Frontend
+
+Le frontend est une application **Angular** qui fournit l'interface
+utilisateur.
+
+Structure principale :
+
+```text
+frontend/ 
+    ├─ src/app/
+        ├─ chessboard/ # rendu échiquier
+        ├─ agent-sidebar/ # barre latérale de l'agent
+        ├─ learning-panel/ # barre d'apprentissage : vidéo et contexte
+        └─ services/ # Agent et appel api
+```
+
+### Fonctionnalités
+
+-   échiquier interactif
+-   panneau de recommandations de l'agent affichant :
+    -   les coups suggérés
+    -   du contexte sur l'ouverture
+    -   des vidéos YouTube pertinentes
+
+Le frontend communique avec le backend via des appels HTTP.
+
+------------------------------------------------------------------------
+
+# Première exécution (ingestion RAG)
+
+Avant de lancer l'application pour la première fois, les données
+Wikichess doivent être indexées dans **Milvus**.
+
+Depuis le backend, exécuter :
+
+`python -m service.rag.ingest.main`
+
+Ce script :
+
+-   charge les données Wikichess
+-   découpe les textes en morceaux (chunking)
+-   génère les embeddings
+-   stocke les vecteurs dans **Milvus**
+
+Cette étape n'a besoin d'être exécutée **qu'une seule fois**, sauf si la
+base vectorielle est réinitialisée.
+
+------------------------------------------------------------------------
+
+# Lancer le serveur de développement
+
+Démarrer le serveur angular en démarrant simplement le container `p13-client`
+
+Puis ouvrir :
+
+http://localhost:3200
+
+L'application se recharge automatiquement lors des modifications du
+code.
