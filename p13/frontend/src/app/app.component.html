@@ -1,16 +1,21 @@
-<div class="page-scroll">
-  <div class="page">
+<div class="page">
+  <div class="main-column">
     <div class="board-area">
       <app-chessboard (fenChange)="onFenChange($event)"></app-chessboard>
     </div>
 
-    <div class="sidebar-area">
-      <app-agent-sidebar
-        [fen]="currentFen"
-        [loading]="loading"
-        [error]="error"
-        [suggestions]="agentResponse">
-      </app-agent-sidebar>
-    </div>
+    <app-learning-panel
+     [videos]="agentResponse?.videos || []"
+      [context]="agentResponse?.context || []">
+    </app-learning-panel>
+  </div>
+
+  <div class="sidebar-area">
+    <app-agent-sidebar
+      [fen]="currentFen"
+      [loading]="loading"
+      [error]="error"
+      [suggestions]="agentResponse">
+    </app-agent-sidebar>
   </div>
 </div>

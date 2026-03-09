@@ -16,8 +16,15 @@
   box-sizing: border-box;
 }
 
+.main-column {
+  display: flex;
+  flex-direction: column;
+  width: 1024px;
+  min-width: 1024px;
+  max-width: 1024px;
+}
+
 .board-area {
-  flex: 0 0 1024px;
   width: 1024px;
   min-width: 1024px;
   max-width: 1024px;
@@ -31,7 +38,8 @@
 }
 
 app-chessboard,
-app-agent-sidebar {
+app-agent-sidebar,
+app-learning-panel {
   display: block;
   width: 100%;
 }

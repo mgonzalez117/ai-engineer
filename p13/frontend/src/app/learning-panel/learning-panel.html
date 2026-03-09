@@ -1,0 +1,45 @@
+<section class="learning-panel" *ngIf="videos?.length || context?.length">
+  <section class="card" *ngIf="videos?.length">
+    <div class="section-head">
+      <h3>Vidéos</h3>
+      <span class="count">{{ videos.length }}</span>
+    </div>
+
+    <div class="videos-list">
+      <a
+        class="video-card"
+        *ngFor="let video of videos"
+        [href]="video.url"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          class="video-thumbnail"
+          [src]="video.thumbnail"
+          [alt]="video.title"
+        />
+
+        <div class="video-main">
+          <p class="video-title">{{ video.title }}</p>
+          <p class="video-channel">{{ video.channel }}</p>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="card" *ngIf="context?.length">
+    <div class="section-head">
+      <h3>Contexte</h3>
+      <span class="count">{{ context.length }}</span>
+    </div>
+
+    <div class="context-list">
+      <article class="context-item" *ngFor="let item of context | slice:0:6">
+        <p class="context-score" *ngIf="item.score !== undefined">
+          Pertinence {{ item.score | number:'1.2-2' }}
+        </p>
+        <p class="context-text">{{ item.text }}</p>
+      </article>
+    </div>
+  </section>
+</section>

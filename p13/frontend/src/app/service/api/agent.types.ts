@@ -21,10 +21,18 @@ export type AgentContextItem = {
   text: string;
 };
 
+export type AgentVideo = {
+  title: string;
+  channel: string;
+  url: string;
+  thumbnail: string;
+};
+
 export type AgentResponse = {
   fen: string;
   source?: string;
   recommendations?: AgentRecommendation[];
   evaluation?: AgentEvaluation | null;
   context?: AgentContextItem[];
+  videos?: AgentVideo[];
 };
