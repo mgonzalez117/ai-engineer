@@ -1,4 +1,11 @@
-import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { Chess } from 'chess.js';
 
 import '@lichess-org/chessground/assets/chessground.base.css';
@@ -40,6 +47,8 @@ type BoardTheme = 'maple' | 'marble' | 'metalboard';
 export class ChessboardComponent implements AfterViewInit {
   @ViewChild('board', { static: true }) el!: ElementRef<HTMLDivElement>;
 
+  @Output() fenChange = new EventEmitter<string>();
+
   private game = new Chess();
   private ground!: Api;
 
@@ -51,26 +60,24 @@ export class ChessboardComponent implements AfterViewInit {
 
     this.ground = Chessground(this.el.nativeElement, {
       selectable: { enabled: true },
-
       draggable: { enabled: true, showGhost: true },
-
       movable: {
         free: false,
         showDests: true,
-
-        /* IMPORTANT : pour tester facilement, on autorise les deux couleurs */
         color: 'both',
-
         dests: this.computeDests(),
         events: {
           after: (from, to) => this.onMove(from as Key, to as Key),
         },
       },
-
       highlight: { lastMove: true, check: true },
     });
 
     this.sync();
+
+    queueMicrotask(() => {
+      this.fenChange.emit(this.game.fen());
+    });
   }
 
   changePieces(event: Event) {
@@ -89,6 +96,7 @@ export class ChessboardComponent implements AfterViewInit {
 
   private onMove(from: Key, to: Key) {
     const move = this.game.move({ from, to, promotion: 'q' });
+
     if (!move) {
       this.sync();
       return;
@@ -98,6 +106,8 @@ export class ChessboardComponent implements AfterViewInit {
     this.ground.set({
       movable: { dests: this.computeDests() },
     });
+
+    this.fenChange.emit(this.game.fen());
   }
 
   private sync() {
@@ -113,6 +123,7 @@ export class ChessboardComponent implements AfterViewInit {
       if (arr) arr.push(m.to);
       else dests.set(m.from, [m.to]);
     }
+
     return dests;
   }
 }

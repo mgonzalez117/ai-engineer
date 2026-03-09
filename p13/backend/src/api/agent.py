@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from agent import get_agent_graph
 
-router = APIRouter(prefix="/api/v1", tags=["agent"])
+router = APIRouter(tags=["agent"])
 
 graph = get_agent_graph()
 

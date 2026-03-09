@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.page {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 24px;
+  width: max-content;
+  min-width: max-content;
+  box-sizing: border-box;
+}
+
+.board-area {
+  flex: 0 0 1024px;
+  width: 1024px;
+  min-width: 1024px;
+  max-width: 1024px;
+}
+
+.sidebar-area {
+  flex: 0 0 560px;
+  width: 560px;
+  min-width: 560px;
+  max-width: 560px;
+}
+
+app-chessboard,
+app-agent-sidebar {
+  display: block;
+  width: 100%;
+}

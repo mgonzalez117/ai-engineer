@@ -4,7 +4,7 @@ from service.youtube.youtube import (
     YouTubeServiceError
 )
 
-router = APIRouter(prefix="/api/v1", tags=["chess"])
+router = APIRouter(tags=["chess"])
 
 
 @router.get("/videos/{opening}")

@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from service.stockfish.stockfish import StockfishService, StockfishError
 from service.utils import validate_fen_or_raise
 
-router = APIRouter(prefix="/api/v1", tags=["chess"])
+router = APIRouter(tags=["chess"])
 
 
 @router.get(

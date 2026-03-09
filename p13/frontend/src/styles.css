@@ -1,8 +1,21 @@
+html,
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  width: 1280px;
+  padding: 0;
+  width: 1920px;
+  overflow-x: auto;
+  overflow-y: auto;
   margin: auto;
+}
+
+body {
+  background: #f3f4f6;
+}
+
+app-root {
+  display: block;
+  width: max-content;
+  min-width: 100%;
 }
 
 /* =========================

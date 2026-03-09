@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 from service.rag.vector_search import search_chunks
 
-router = APIRouter(prefix="/api/v1", tags=["chess"])
+router = APIRouter(tags=["chess"])
 
 class VectorSearchRequest(BaseModel):
     query: str = Field(..., min_length=2)
