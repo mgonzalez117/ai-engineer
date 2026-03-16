@@ -1,4 +1,7 @@
-html,
+/* =========================
+   Page layout
+   ========================= */
+
 body {
   margin: 0;
   padding: 0;
@@ -6,9 +9,6 @@ body {
   overflow-x: auto;
   overflow-y: auto;
   margin: auto;
-}
-
-body {
   background: #f3f4f6;
 }
 
@@ -19,18 +19,17 @@ app-root {
 }
 
 /* =========================
-   Controls (simple)
+   Controls
    ========================= */
+
 .cg-controls {
   display: flex;
   gap: 16px;
   align-items: end;
   margin: 16px 0;
   padding: 12px 16px;
-
   width: fit-content;
   max-width: 95vw;
-
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.9);
@@ -55,15 +54,16 @@ app-root {
 }
 
 /* =========================
-   Board host (fixed 1024)
+   Board host
    ========================= */
+
 .cg-board-host {
   width: 1024px;
   height: 1024px;
   position: relative;
 }
 
-/* Chessground fills the host (supports class or tag variants) */
+/* Chessground fills the host */
 .cg-board-host .cg-wrap,
 .cg-board-host .cg-container,
 .cg-board-host .cg-board,
@@ -72,7 +72,10 @@ app-root {
   height: 100% !important;
 }
 
-/* Backgrounds: apply on HOST (safe, doesn't interfere with overlays) */
+/* =========================
+   Board backgrounds
+   ========================= */
+
 .maple.cg-board-host {
   background: url('/assets/boards/maple.jpg') center / 100% 100% no-repeat;
 }
@@ -85,15 +88,16 @@ app-root {
   background: url('/assets/boards/metal.jpg') center / 100% 100% no-repeat;
 }
 
-/* Keep inner board surface transparent so host background is visible */
+/* Keep inner board transparent */
 .cg-board-host .cg-board,
 .cg-board-host cg-board {
   background: transparent !important;
 }
 
 /* =========================
-   Pieces (keep stable)
+   Custom pieces
    ========================= */
+
 .tournament piece,
 .metal piece,
 .trimmed piece {
@@ -102,57 +106,54 @@ app-root {
   background-position: center center;
 }
 
-/* =========================
-   Move destinations (showDests)
-   Only style destination squares, never all squares.
-   ========================= */
-
-/* Reset any accidental styling on squares */
-.cg-board-host square,
-.cg-board-host .square {
-  background: transparent;
-  border: 0;
-  transform: none;
-}
-
-/* Dot for normal destinations */
-.cg-board-host square.move-dest,
-.cg-board-host .move-dest {
-  background: rgba(0, 0, 0, 0.28) !important;
-  border-radius: 999px !important;
-  transform: scale(0.42) !important;
-}
-
-/* Dot for premoves */
-.cg-board-host square.premove-dest,
-.cg-board-host .premove-dest {
-  background: rgba(0, 0, 0, 0.20) !important;
-  border-radius: 999px !important;
-  transform: scale(0.42) !important;
-}
-
-/* Ring for captures */
-.cg-board-host square.capture,
-.cg-board-host .capture {
-  background: transparent !important;
-  border: 6px solid rgba(0, 0, 0, 0.28) !important;
-  border-radius: 999px !important;
-  transform: scale(0.85) !important;
-}
-
-/* Layering: markers above pieces */
+/* Optional layering */
 .cg-board-host piece {
   position: relative;
-  z-index: 4;
+  z-index: 3;
 }
 
-.cg-board-host square.move-dest,
-.cg-board-host square.premove-dest,
-.cg-board-host square.capture,
-.cg-board-host .move-dest,
-.cg-board-host .premove-dest,
-.cg-board-host .capture {
-  position: relative;
-  z-index: 5;
-  opacity: 1 !important;
+/* =========================
+   Move destinations
+   ========================= */
+
+/* Normal legal move: center dot */
+.cg-board-host square.move-dest {
+  background:
+    radial-gradient(
+      circle,
+      rgba(0, 0, 0, 0.30) 0 18%,
+      transparent 19%
+    ) !important;
+}
+
+/* Premove: lighter dot */
+.cg-board-host square.premove-dest {
+  background:
+    radial-gradient(
+      circle,
+      rgba(0, 0, 0, 0.18) 0 18%,
+      transparent 19%
+    ) !important;
+}
+
+/* Capture: ring */
+.cg-board-host square.move-dest.oc {
+  background:
+    radial-gradient(
+      circle,
+      transparent 0 30%,
+      rgba(0, 0, 0, 0.35) 31% 38%,
+      transparent 39%
+    ) !important;
+}
+
+/* Premove capture: lighter ring */
+.cg-board-host square.premove-dest.oc {
+  background:
+    radial-gradient(
+      circle,
+      transparent 0 30%,
+      rgba(0, 0, 0, 0.18) 31% 38%,
+      transparent 39%
+    ) !important;
 }

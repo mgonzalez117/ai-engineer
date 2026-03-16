@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  OnDestroy,
   Output,
   ViewChild,
 } from '@angular/core';
@@ -22,7 +23,7 @@ type BoardTheme = 'maple' | 'marble' | 'metalboard';
   standalone: true,
   templateUrl: './chessboard.component.html',
 })
-export class ChessboardComponent implements AfterViewInit {
+export class ChessboardComponent implements AfterViewInit, OnDestroy {
   @ViewChild('board', { static: true }) el!: ElementRef<HTMLDivElement>;
 
   @Output() fenChange = new EventEmitter<string>();
@@ -33,31 +34,38 @@ export class ChessboardComponent implements AfterViewInit {
 
   private currentPieces: PiecesTheme = 'tournament';
   private currentBoard: BoardTheme = 'maple';
-
   private activeFrom: Key | null = null;
 
   ngAfterViewInit(): void {
     this.el.nativeElement.classList.add(this.currentPieces, this.currentBoard);
 
     this.ground = Chessground(this.el.nativeElement, {
-      selectable: { enabled: true },
-      draggable: { enabled: true, showGhost: true },
+      selectable: {
+        enabled: true,
+      },
+      draggable: {
+        enabled: true,
+        showGhost: true,
+      },
       movable: {
         free: false,
-        showDests: true,
         color: 'both',
+        showDests: true,
         dests: this.computeDests(),
         events: {
           after: (from, to) => this.onMove(from as Key, to as Key),
         },
       },
+      highlight: {
+        lastMove: true,
+        check: true,
+      },
       events: {
         select: (key) => this.onSelect(key as Key),
       },
-      highlight: { lastMove: true, check: true },
     });
 
-    this.sync();
+    this.refreshBoard();
 
     queueMicrotask(() => {
       this.fenChange.emit(this.game.fen());
@@ -65,6 +73,11 @@ export class ChessboardComponent implements AfterViewInit {
 
     this.el.nativeElement.addEventListener('pointerup', this.onPointerUp);
     this.el.nativeElement.addEventListener('touchend', this.onPointerUp);
+  }
+
+  ngOnDestroy(): void {
+    this.el.nativeElement.removeEventListener('pointerup', this.onPointerUp);
+    this.el.nativeElement.removeEventListener('touchend', this.onPointerUp);
   }
 
   changePieces(event: Event): void {
@@ -84,16 +97,15 @@ export class ChessboardComponent implements AfterViewInit {
   private onSelect(key: Key): void {
     const piece = this.game.get(key as Square);
 
-    if (!piece) {
-      return;
-    }
-
-    if (this.game.turn() !== piece.color) {
+    if (!piece || piece.color !== this.game.turn()) {
+      this.clearDragFilter();
       return;
     }
 
     this.activeFrom = key;
     this.dragFilterChange.emit(key);
+
+    this.refreshBoard();
   }
 
   private onMove(from: Key, to: Key): void {
@@ -104,17 +116,13 @@ export class ChessboardComponent implements AfterViewInit {
     });
 
     if (!move) {
-      this.sync();
+      this.refreshBoard();
       this.clearDragFilter();
       return;
     }
 
-    this.sync();
-    this.ground.set({
-      movable: { dests: this.computeDests() },
-    });
-
     this.clearDragFilter();
+    this.refreshBoard();
     this.fenChange.emit(this.game.fen());
   }
 
@@ -129,20 +137,28 @@ export class ChessboardComponent implements AfterViewInit {
     }
   }
 
-  private sync(): void {
-    this.ground.set({ fen: this.game.fen() });
+  private refreshBoard(): void {
+    this.ground.set({
+      fen: this.game.fen(),
+      movable: {
+        free: false,
+        color: 'both',
+        showDests: true,
+        dests: this.computeDests(),
+      },
+    });
   }
 
   private computeDests(): Map<Key, Key[]> {
     const dests = new Map<Key, Key[]>();
     const moves = this.game.moves({ verbose: true }) as Array<{ from: Key; to: Key }>;
 
-    for (const m of moves) {
-      const arr = dests.get(m.from);
-      if (arr) {
-        arr.push(m.to);
+    for (const move of moves) {
+      const list = dests.get(move.from);
+      if (list) {
+        list.push(move.to);
       } else {
-        dests.set(m.from, [m.to]);
+        dests.set(move.from, [move.to]);
       }
     }
 
