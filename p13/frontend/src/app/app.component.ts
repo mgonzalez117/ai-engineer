@@ -5,7 +5,7 @@ import { ChessboardComponent } from './chessboard/chessboard.component';
 import { AgentSidebarComponent } from './agent-sidebar/agent-sidebar';
 import { LearningPanelComponent } from './learning-panel/learning-panel';
 import { AgentService } from './service/api/AgentService';
-import { AgentResponse } from './service/api/agent.types';
+import { AgentRecommendation, AgentResponse } from './service/api/agent.types';
 
 @Component({
   selector: 'app-root',
@@ -25,12 +25,24 @@ export class AppComponent {
   error = '';
   agentResponse: AgentResponse | null = null;
 
+  /**
+   * Case de départ de la pièce actuellement en cours d'interaction.
+   * null = pas de filtre temporaire.
+   */
+  draggedFrom: string | null = null;
+
   constructor(private agentService: AgentService) {}
 
   onFenChange(fen: string): void {
     this.currentFen = fen;
     this.loading = true;
     this.error = '';
+
+    /**
+     * Dès qu'un coup est réellement joué, on retire le filtre temporaire
+     * et on laisse le comportement normal recharger les suggestions.
+     */
+    this.draggedFrom = null;
 
     this.agentService.getSuggestions(fen).subscribe({
       next: (data) => {
@@ -43,6 +55,43 @@ export class AppComponent {
         this.agentResponse = null;
         this.loading = false;
       },
+    });
+  }
+
+  onDragFilterChange(from: string | null): void {
+    this.draggedFrom = from;
+  }
+
+  get filteredAgentResponse(): AgentResponse | null {
+    if (!this.agentResponse) {
+      return null;
+    }
+
+    if (!this.draggedFrom) {
+      return this.agentResponse;
+    }
+
+    return {
+      ...this.agentResponse,
+      recommendations: this.filterRecommendationsByFrom(
+        this.agentResponse.recommendations ?? [],
+        this.draggedFrom
+      ),
+    };
+  }
+
+  private filterRecommendationsByFrom(
+    recommendations: AgentRecommendation[],
+    from: string
+  ): AgentRecommendation[] {
+    return recommendations.filter((recommendation) => {
+      const uci = recommendation.uci;
+
+      if (!uci || uci.length < 4) {
+        return false;
+      }
+
+      return uci.slice(0, 2) === from;
     });
   }
 }

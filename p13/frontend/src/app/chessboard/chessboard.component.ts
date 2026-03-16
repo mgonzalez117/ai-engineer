@@ -6,7 +6,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { Chess } from 'chess.js';
+import { Chess, Square } from 'chess.js';
 
 import '@lichess-org/chessground/assets/chessground.base.css';
 
@@ -48,12 +48,19 @@ export class ChessboardComponent implements AfterViewInit {
   @ViewChild('board', { static: true }) el!: ElementRef<HTMLDivElement>;
 
   @Output() fenChange = new EventEmitter<string>();
+  @Output() dragFilterChange = new EventEmitter<Key | null>();
 
   private game = new Chess();
   private ground!: Api;
 
   private currentPieces: PiecesTheme = 'tournament';
   private currentBoard: BoardTheme = 'maple';
+
+  /**
+   * Case source actuellement "en cours d'interaction"
+   * Sert uniquement au filtre front des recommandations.
+   */
+  private activeFrom: Key | null = null;
 
   ngAfterViewInit(): void {
     this.el.nativeElement.classList.add(this.currentPieces, this.currentBoard);
@@ -70,6 +77,9 @@ export class ChessboardComponent implements AfterViewInit {
           after: (from, to) => this.onMove(from as Key, to as Key),
         },
       },
+      events: {
+        select: (key) => this.onSelect(key as Key),
+      },
       highlight: { lastMove: true, check: true },
     });
 
@@ -78,6 +88,14 @@ export class ChessboardComponent implements AfterViewInit {
     queueMicrotask(() => {
       this.fenChange.emit(this.game.fen());
     });
+
+    /**
+     * Fin d'interaction sans coup joué :
+     * on retire simplement le filtre local.
+     * Pas de nouvelle recherche.
+     */
+    this.el.nativeElement.addEventListener('pointerup', this.onPointerUp);
+    this.el.nativeElement.addEventListener('touchend', this.onPointerUp);
   }
 
   changePieces(event: Event) {
@@ -94,11 +112,30 @@ export class ChessboardComponent implements AfterViewInit {
     this.currentBoard = value;
   }
 
+ private onSelect(key: Key) {
+  const piece = this.game.get(key as Square);
+
+  if (!piece) {
+    return;
+  }
+
+  const turn = this.game.turn();
+  const pieceColor = piece.color;
+
+  if (turn !== pieceColor) {
+    return;
+  }
+
+  this.activeFrom = key;
+  this.dragFilterChange.emit(key);
+}
+
   private onMove(from: Key, to: Key) {
     const move = this.game.move({ from, to, promotion: 'q' });
 
     if (!move) {
       this.sync();
+      this.clearDragFilter();
       return;
     }
 
@@ -107,7 +144,26 @@ export class ChessboardComponent implements AfterViewInit {
       movable: { dests: this.computeDests() },
     });
 
+    // Le coup est joué : on enlève le filtre temporaire
+    this.clearDragFilter();
+
+    // Puis on laisse le reste de l'app faire sa logique habituelle
     this.fenChange.emit(this.game.fen());
+  }
+
+  private onPointerUp = () => {
+    /**
+     * Si on relâche sans qu'un coup légal ait été joué,
+     * on revient à l'état initial côté filtre.
+     */
+    this.clearDragFilter();
+  };
+
+  private clearDragFilter() {
+    if (this.activeFrom !== null) {
+      this.activeFrom = null;
+      this.dragFilterChange.emit(null);
+    }
   }
 
   private sync() {

@@ -1,12 +1,15 @@
 <div class="page">
   <div class="main-column">
     <div class="board-area">
-      <app-chessboard (fenChange)="onFenChange($event)"></app-chessboard>
+      <app-chessboard
+        (fenChange)="onFenChange($event)"
+        (dragFilterChange)="onDragFilterChange($event)">
+      </app-chessboard>
     </div>
 
     <app-learning-panel
-     [videos]="agentResponse?.videos || []"
-      [context]="agentResponse?.context || []">
+      [videos]="filteredAgentResponse?.videos || []"
+      [context]="filteredAgentResponse?.context || []">
     </app-learning-panel>
   </div>
 
@@ -15,7 +18,7 @@
       [fen]="currentFen"
       [loading]="loading"
       [error]="error"
-      [suggestions]="agentResponse">
+      [suggestions]="filteredAgentResponse">
     </app-agent-sidebar>
   </div>
 </div>
