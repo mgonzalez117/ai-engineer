@@ -1,1 +1,21 @@
-<div #board class="board"></div>
+<div class="cg-controls">
+  <div class="cg-control">
+    <label for="pieces">Pièces</label>
+    <select id="pieces" (change)="changePieces($event)">
+      <option value="tournament" selected>Tournament</option>
+      <option value="metal">Metal</option>
+      <option value="trimmed">Trimmed</option>
+    </select>
+  </div>
+
+  <div class="cg-control">
+    <label for="board">Board</label>
+    <select id="board" (change)="changeBoard($event)">
+      <option value="maple" selected>Maple</option>
+      <option value="marble">Marble</option>
+      <option value="metalboard">Metal</option>
+    </select>
+  </div>
+</div>
+
+<div #board class="cg-board-host"></div>

@@ -230,3 +230,7 @@ pre {
 .empty {
   opacity: 0.85;
 }
+
+.turn {
+  font-size: 20px;
+}

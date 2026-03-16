@@ -11,8 +11,10 @@
   </div>
 
   <section class="card">
-    <p class="label">Position actuelle</p>
-    <p class="fen">{{ fen || 'Aucune position disponible' }}</p>
+    <p class="label">Tour de jeu</p>
+    <p class="turn">
+      {{ fen ? (fen.split(' ')[1] === 'w' ? '⚪ Blancs' : '⚫ Noirs') : 'Position non disponible' }}
+    </p>
   </section>
 
   <section class="card" *ngIf="loading">
@@ -26,6 +28,7 @@
   <ng-container *ngIf="!loading && !error && suggestions as data">
     <section class="card" *ngIf="data.evaluation as eval">
       <p class="label">Évaluation</p>
+      <p>Le coup que vous avez joué affecte votre score de : </p>
       <p class="eval">
         <ng-container *ngIf="eval.type === 'cp'">
           {{ formatCentipawns(eval.value) }}
