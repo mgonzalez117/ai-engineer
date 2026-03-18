@@ -102,7 +102,9 @@ UltraMedical-Preference n’est ni un dataset de QA ouverte ni un dataset de QCM
 
 ### Aggrégation : Construction d'une structure commune
 
-Afin de réaliser l'entraînement, il est nécessaire de créer une structure commune au dataset qui sera utilisé.
+Afin de réaliser l'entraînement, il est nécessaire d'avoir un dataset homogène.
+Nous allons donc utiliser une structure commune.
+
 Voici la structure qui a été retenue : 
 
 ```
