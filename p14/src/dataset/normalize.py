@@ -121,19 +121,30 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                 question = clean_text(record.get("question"))
                 answer = clean_text(record.get("answer"))
                 clinical_case = clean_text(record.get("clinical_case"))
+                medical_subject = clean_text(record.get("medical_subject"))
+                question_type = clean_text(record.get("question_type"))
+                task = clean_text(record.get("task"))
+                source_row_id = clean_text(record.get("id"))
 
                 if not question or not answer:
                     continue
 
-                user_input = question
+                parts = []
+                if medical_subject:
+                    parts.append(f"[Spécialité médicale : {medical_subject}]")
+                if question_type:
+                    parts.append(f"[Type de question : {question_type}]")
                 if clinical_case:
-                    user_input = f"Cas clinique :\n{clinical_case}\n\nQuestion :\n{question}"
+                    parts.append(f"Cas clinique :\n{clinical_case}")
+                parts.append(f"Question :\n{question}")
+
+                user_input = "\n\n".join(parts)
 
                 rows.append({
                     "id": make_id("mediqal-oeq", idx),
                     "dataset": "mediqal",
                     "language": "fr",
-                    "instruction": "Réponds de manière claire et médicale à la question suivante.",
+                    "instruction": "Réponds de manière claire, concise et médicale à la question suivante.",
                     "input": user_input,
                     "output": answer,
                     "metadata": build_metadata(
@@ -141,6 +152,10 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                         language="fr",
                         task_type="qa_open",
                         text_for_clinical_case=user_input,
+                        medical_subject=medical_subject,
+                        question_type=question_type,
+                        task=task,
+                        source_row_id=source_row_id,
                     ),
                 })
                 idx += 1
@@ -150,6 +165,11 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
             for record in records:
                 question = clean_text(record.get("question"))
                 clinical_case = clean_text(record.get("clinical_case"))
+                medical_subject = clean_text(record.get("medical_subject"))
+                question_type = clean_text(record.get("question_type"))
+                task = clean_text(record.get("task"))
+                source_row_id = clean_text(record.get("id"))
+
                 options = get_options(record)
                 correct = parse_correct_answers(record.get("correct_answers"))
 
@@ -157,19 +177,27 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                     continue
 
                 parts = []
+                if medical_subject:
+                    parts.append(f"[Spécialité médicale : {medical_subject}]")
+                if question_type:
+                    parts.append(f"[Type de question : {question_type}]")
                 if clinical_case:
                     parts.append(f"Cas clinique :\n{clinical_case}")
                 parts.append(f"Question :\n{question}")
                 parts.append("Options :\n" + "\n".join(f"{k}. {v}" for k, v in options))
 
                 user_input = "\n\n".join(parts)
-                output = "Réponse correcte : " + ", ".join(correct)
+
+                # On garde les lettres/références correctes dans l'output,
+                # comme dans ton implémentation actuelle.
+                prefix = "Réponse correcte : " if len(correct) == 1 else "Réponses correctes : "
+                output = prefix + ", ".join(correct)
 
                 rows.append({
                     "id": make_id("mediqal-mcq", idx),
                     "dataset": "mediqal",
                     "language": "fr",
-                    "instruction": "Choisis la ou les bonnes réponses.",
+                    "instruction": "Choisis la ou les bonnes réponses parmi les options proposées.",
                     "input": user_input,
                     "output": output,
                     "metadata": build_metadata(
@@ -177,6 +205,11 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                         language="fr",
                         task_type="mcq",
                         text_for_clinical_case=user_input,
+                        medical_subject=medical_subject,
+                        question_type=question_type,
+                        task=task,
+                        source_row_id=source_row_id,
+                        correct_answers=correct,
                     ),
                 })
                 idx += 1

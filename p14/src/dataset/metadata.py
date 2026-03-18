@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 
 def has_clinical_case(text: str) -> bool:
@@ -23,13 +24,21 @@ def build_metadata(
     language: str,
     task_type: str,
     text_for_clinical_case: str = "",
+    **extra: Any,
 ) -> dict:
-    return {
+    metadata = {
         "source": source,
         "language": language,
         "task_type": task_type,
         "has_clinical_case": has_clinical_case(text_for_clinical_case),
     }
+
+    # Ajout dynamique des champs supplémentaires
+    for key, value in extra.items():
+        if value not in (None, "", [], {}):
+            metadata[key] = value
+
+    return metadata
 
 
 def get_aggregated_at() -> str:
