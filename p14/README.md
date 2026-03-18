@@ -77,7 +77,7 @@ FrenchMedMCQA apporte des QCM médicaux en français, propres et homogènes, san
 * `id` : identifiant de la question
 * `question` : question posée
 * `answer_a`, `answer_b`, `answer_c`, `answer_d`, `answer_e` : réponses possibles
-* `correct_answers` : différentes réponses possibles (notation index de la réponse, ex: 2 = B)
+* `correct_answers` : différentes réponses possibles (notation index de la réponse, ex: 2 = C)
 * `number_correct_answers` : nombre de réponses possibles (en réalité, une seule réponse possible pour toutes les questions du dataset)
 
 
@@ -99,3 +99,26 @@ UltraMedical-Preference n’est ni un dataset de QA ouverte ni un dataset de QCM
 * `prompt_id` : identifiant de la question
 * `label_type` : Type de comparaison (sur quoi se base la préférence choisie, ex : sureté, la plus factuellement correcte, etc.)
 * `metadata` : métadonnées encodées
+
+### Aggrégation : Construction d'une structure commune
+
+Afin de réaliser l'entraînement, il est nécessaire de créer une structure commune au dataset qui sera utilisé.
+Voici la structure qui a été retenue : 
+
+```
+{
+  "id": "mediqal-oeq-00000001",
+  "dataset": "mediqal",
+  "language": "fr",
+  "instruction": "Réponds de manière claire, concise et médicale à la question suivante.",
+  "input": "Cas clinique : ...\n\nQuestion : ...",
+  "output": "Réponse attendue...",
+  "metadata": {
+    "task_type": "qa_open",
+    "medical_subject": "cardiologie",
+    "question_type": "reasoning",
+    "has_clinical_case": true,
+    "source_row_id": "12345"
+  }
+}
+```
