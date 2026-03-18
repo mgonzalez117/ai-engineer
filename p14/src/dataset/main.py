@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 
 from .io import PROCESSED_DIR, ensure_dirs, write_json, write_jsonl
+from .metadata import get_aggregated_at
 from .normalize import (
     frenchmedmcqa_to_sft,
     mediqal_to_sft,
@@ -67,11 +68,11 @@ def sample_sft_balanced(rows: list[dict], n: int = 5000, seed: int = 42) -> list
     missing = n - len(sampled)
 
     if missing > 0:
-        remaining_fr = [row for row in fr_rows if row not in sampled_fr]
-        remaining_en = [row for row in en_rows if row not in sampled_en]
-        remaining_other = [row for row in other_rows if row not in sampled]
-
-        pool = remaining_fr + remaining_en + remaining_other
+        sampled_ids = {row["id"] for row in sampled}
+        pool = [
+            row for row in (fr_rows + en_rows + other_rows)
+            if row["id"] not in sampled_ids
+        ]
         if pool:
             sampled.extend(rng.sample(pool, min(missing, len(pool))))
 
@@ -81,12 +82,12 @@ def sample_sft_balanced(rows: list[dict], n: int = 5000, seed: int = 42) -> list
 
 def build_clinical_eval(rows: list[dict], max_examples: int = 200, seed: int = 42) -> list[dict]:
     """
-    Construit un jeu clinique séparé à partir des exemples contenant 'Cas clinique'.
-    Équilibrage simple FR/EN si possible.
+    Construit un jeu clinique séparé à partir des exemples marqués
+    has_clinical_case dans metadata.
     """
     clinical_rows = [
         row for row in rows
-        if "Cas clinique" in row.get("input", "")
+        if row.get("metadata", {}).get("has_clinical_case") is True
     ]
 
     if len(clinical_rows) <= max_examples:
@@ -102,6 +103,7 @@ def remove_rows_by_id(rows: list[dict], rows_to_remove: list[dict]) -> list[dict
 
 def main() -> None:
     ensure_dirs()
+    aggregated_at = get_aggregated_at()
 
     # 1) Agrégation complète
     all_sft_rows: list[dict] = []
@@ -137,8 +139,37 @@ def main() -> None:
     write_jsonl(PROCESSED_DIR / "dpo_val.jsonl", dpo_splits["val"])
     write_jsonl(PROCESSED_DIR / "dpo_test.jsonl", dpo_splits["test"])
 
-    # 8) Stats
+    # 8) Manifest
+    manifest = {
+        "aggregated_at": aggregated_at,
+        "sft_target_size": 5000,
+        "clinical_eval_target_size": 200,
+        "sources": [
+            "medquad",
+            "mediqal",
+            "frenchmedmcqa",
+            "ultramedical_preference",
+        ],
+        "files": [
+            "sft.jsonl",
+            "train.jsonl",
+            "val.jsonl",
+            "test.jsonl",
+            "clinical_eval.jsonl",
+            "dpo.jsonl",
+            "dpo_train.jsonl",
+            "dpo_val.jsonl",
+            "dpo_test.jsonl",
+            "stats.json",
+            "manifest.json",
+        ],
+        "status": "ok",
+    }
+    write_json(PROCESSED_DIR / "manifest.json", manifest)
+
+    # 9) Stats
     stats = {
+        "aggregated_at": aggregated_at,
         "sft_total_before_sampling": len(all_sft_rows),
         "sft_total_after_sampling": len(sft_rows),
         "sft_languages_after_sampling": count_by_language(sft_rows),
@@ -170,6 +201,7 @@ def main() -> None:
 
     write_json(PROCESSED_DIR / "stats.json", stats)
 
+    print(f"Aggregated at: {aggregated_at}")
     print(f"SFT total avant sampling: {len(all_sft_rows)}")
     print(f"SFT total après sampling: {len(sft_rows)}")
     print(f"SFT languages: {count_by_language(sft_rows)}")

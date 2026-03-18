@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 from typing import Any
 
 from .io import RAW_DIR, find_all_tables_with_columns, find_first_table_with_columns
+from .metadata import build_metadata
 
 
 def clean_text(value: Any) -> str:
@@ -89,6 +89,12 @@ def medquad_to_sft() -> list[dict[str, Any]]:
             "input": question,
             "output": answer,
             "metadata": {
+                **build_metadata(
+                    source="medquad",
+                    language="en",
+                    task_type="qa_open",
+                    text_for_clinical_case=question,
+                ),
                 "question_type": qtype,
             },
         })
@@ -130,7 +136,12 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                     "instruction": "Réponds de manière claire et médicale à la question suivante.",
                     "input": user_input,
                     "output": answer,
-                    "metadata": {},
+                    "metadata": build_metadata(
+                        source="mediqal",
+                        language="fr",
+                        task_type="qa_open",
+                        text_for_clinical_case=user_input,
+                    ),
                 })
                 idx += 1
 
@@ -151,6 +162,7 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                 parts.append(f"Question :\n{question}")
                 parts.append("Options :\n" + "\n".join(f"{k}. {v}" for k, v in options))
 
+                user_input = "\n\n".join(parts)
                 output = "Réponse correcte : " + ", ".join(correct)
 
                 rows.append({
@@ -158,9 +170,14 @@ def mediqal_to_sft() -> list[dict[str, Any]]:
                     "dataset": "mediqal",
                     "language": "fr",
                     "instruction": "Choisis la ou les bonnes réponses.",
-                    "input": "\n\n".join(parts),
+                    "input": user_input,
                     "output": output,
-                    "metadata": {},
+                    "metadata": build_metadata(
+                        source="mediqal",
+                        language="fr",
+                        task_type="mcq",
+                        text_for_clinical_case=user_input,
+                    ),
                 })
                 idx += 1
 
@@ -198,6 +215,12 @@ def frenchmedmcqa_to_sft() -> list[dict[str, Any]]:
                 "input": user_input,
                 "output": "Réponse correcte : " + ", ".join(correct),
                 "metadata": {
+                    **build_metadata(
+                        source="frenchmedmcqa",
+                        language="fr",
+                        task_type="mcq",
+                        text_for_clinical_case=user_input,
+                    ),
                     "number_correct_answers": record.get("number_correct_answers"),
                     "source_id": record.get("id"),
                 },
@@ -230,7 +253,12 @@ def ultramedical_to_dpo() -> list[dict[str, Any]]:
             "prompt": prompt,
             "chosen": chosen,
             "rejected": rejected,
-            "metadata": {},
+            "metadata": build_metadata(
+                source="ultramedical_preference",
+                language="en",
+                task_type="preference",
+                text_for_clinical_case=prompt,
+            ),
         })
 
     return rows
