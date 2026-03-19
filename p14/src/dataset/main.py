@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 
+from .anonymize import anonymize_dpo_rows, anonymize_sft_rows
 from .io import PROCESSED_DIR, ensure_dirs, write_json, write_jsonl
 from .metadata import get_aggregated_at
 from .normalize import (
@@ -10,7 +11,9 @@ from .normalize import (
     medquad_to_sft,
     ultramedical_to_dpo,
 )
+from .validate import summarize_validation, validate_dpo_rows, validate_sft_rows
 
+TARGET_SIZE=5500
 
 def split_dataset(rows: list[dict], seed: int = 42) -> dict[str, list[dict]]:
     shuffled = rows[:]
@@ -44,7 +47,7 @@ def count_by_language(rows: list[dict]) -> dict[str, int]:
     return counts
 
 
-def sample_sft_balanced(rows: list[dict], n: int = 5000, seed: int = 42) -> list[dict]:
+def sample_sft_balanced(rows: list[dict], n: int = TARGET_SIZE, seed: int = 42) -> list[dict]:
     """
     Échantillonnage équilibré 50/50 FR/EN si possible.
     Si une langue n'a pas assez d'exemples, on complète avec l'autre.
@@ -101,6 +104,24 @@ def remove_rows_by_id(rows: list[dict], rows_to_remove: list[dict]) -> list[dict
     return [row for row in rows if row["id"] not in ids_to_remove]
 
 
+def filter_validated_rows(
+    rows: list[dict],
+    validation_results: list[dict],
+) -> tuple[list[dict], list[dict]]:
+    """
+    Sépare les lignes valides et invalides après validation d'anonymisation.
+    """
+    invalid_ids = {
+        result["id"]
+        for result in validation_results
+        if not result.get("valid", False)
+    }
+
+    valid_rows = [row for row in rows if row.get("id") not in invalid_ids]
+    invalid_rows = [row for row in rows if row.get("id") in invalid_ids]
+    return valid_rows, invalid_rows
+
+
 def main() -> None:
     ensure_dirs()
     aggregated_at = get_aggregated_at()
@@ -113,36 +134,70 @@ def main() -> None:
 
     all_dpo_rows = ultramedical_to_dpo()
 
-    # 2) Sous-échantillonnage SFT à 5000 avec équilibre FR/EN
-    sft_rows = sample_sft_balanced(all_sft_rows, n=5000, seed=42)
+    # 2) Sous-échantillonnage SFT à TARGET_SIZE avec équilibre FR/EN
+    sampled_sft_rows = sample_sft_balanced(all_sft_rows, n=TARGET_SIZE, seed=42)
 
-    # 3) Extraction du jeu clinique séparé AVANT les splits
-    clinical_eval_rows = build_clinical_eval(sft_rows, max_examples=200, seed=42)
+    # 3) Anonymisation
+    anonymized_sft_rows = anonymize_sft_rows(sampled_sft_rows)
+    anonymized_dpo_rows = anonymize_dpo_rows(all_dpo_rows)
 
-    # 4) Suppression du jeu clinique du pool principal
-    remaining_sft_rows = remove_rows_by_id(sft_rows, clinical_eval_rows)
+    # 4) Validation post-anonymisation
+    sft_validation_results = validate_sft_rows(anonymized_sft_rows)
+    dpo_validation_results = validate_dpo_rows(anonymized_dpo_rows)
 
-    # 5) Splits train / val / test sur le reste
+    sft_validation_summary = summarize_validation(sft_validation_results)
+    dpo_validation_summary = summarize_validation(dpo_validation_results)
+
+    # 5) Filtrage des lignes encore non conformes après anonymisation
+    valid_sft_rows, quarantined_sft_rows = filter_validated_rows(
+        anonymized_sft_rows,
+        sft_validation_results,
+    )
+    valid_dpo_rows, quarantined_dpo_rows = filter_validated_rows(
+        anonymized_dpo_rows,
+        dpo_validation_results,
+    )
+
+    # 6) Extraction du jeu clinique séparé AVANT les splits
+    clinical_eval_rows = build_clinical_eval(valid_sft_rows, max_examples=200, seed=42)
+
+    # 7) Suppression du jeu clinique du pool principal
+    remaining_sft_rows = remove_rows_by_id(valid_sft_rows, clinical_eval_rows)
+
+    # 8) Splits train / val / test sur le reste
     sft_splits = split_dataset(remaining_sft_rows, seed=42)
-    dpo_splits = split_dataset(all_dpo_rows, seed=42)
+    dpo_splits = split_dataset(valid_dpo_rows, seed=42)
 
-    # 6) Écriture SFT
-    write_jsonl(PROCESSED_DIR / "sft.jsonl", sft_rows)
+    # 9) Écriture SFT
+    write_jsonl(PROCESSED_DIR / "sft.jsonl", valid_sft_rows)
     write_jsonl(PROCESSED_DIR / "train.jsonl", sft_splits["train"])
     write_jsonl(PROCESSED_DIR / "val.jsonl", sft_splits["val"])
     write_jsonl(PROCESSED_DIR / "test.jsonl", sft_splits["test"])
     write_jsonl(PROCESSED_DIR / "clinical_eval.jsonl", clinical_eval_rows)
 
-    # 7) Écriture DPO
-    write_jsonl(PROCESSED_DIR / "dpo.jsonl", all_dpo_rows)
+    # 10) Écriture DPO
+    write_jsonl(PROCESSED_DIR / "dpo.jsonl", valid_dpo_rows)
     write_jsonl(PROCESSED_DIR / "dpo_train.jsonl", dpo_splits["train"])
     write_jsonl(PROCESSED_DIR / "dpo_val.jsonl", dpo_splits["val"])
     write_jsonl(PROCESSED_DIR / "dpo_test.jsonl", dpo_splits["test"])
 
-    # 8) Manifest
+    # 11) Quarantaine + rapports de validation
+    write_jsonl(PROCESSED_DIR / "sft_quarantine.jsonl", quarantined_sft_rows)
+    write_jsonl(PROCESSED_DIR / "dpo_quarantine.jsonl", quarantined_dpo_rows)
+
+    write_json(PROCESSED_DIR / "sft_validation_report.json", {
+        "summary": sft_validation_summary,
+        "results": sft_validation_results,
+    })
+    write_json(PROCESSED_DIR / "dpo_validation_report.json", {
+        "summary": dpo_validation_summary,
+        "results": dpo_validation_results,
+    })
+
+    # 12) Manifest
     manifest = {
         "aggregated_at": aggregated_at,
-        "sft_target_size": 5000,
+        "sft_target_size": TARGET_SIZE,
         "clinical_eval_target_size": 200,
         "sources": [
             "medquad",
@@ -160,21 +215,33 @@ def main() -> None:
             "dpo_train.jsonl",
             "dpo_val.jsonl",
             "dpo_test.jsonl",
+            "sft_quarantine.jsonl",
+            "dpo_quarantine.jsonl",
+            "sft_validation_report.json",
+            "dpo_validation_report.json",
             "stats.json",
             "manifest.json",
         ],
+        "anonymization": {
+            "enabled": True,
+            "validation_enabled": True,
+            "invalid_rows_quarantined": True,
+        },
         "status": "ok",
     }
     write_json(PROCESSED_DIR / "manifest.json", manifest)
 
-    # 9) Stats
+    # 13) Stats
     stats = {
         "aggregated_at": aggregated_at,
         "sft_total_before_sampling": len(all_sft_rows),
-        "sft_total_after_sampling": len(sft_rows),
-        "sft_languages_after_sampling": count_by_language(sft_rows),
+        "sft_total_after_sampling_before_anonymization": len(sampled_sft_rows),
+        "sft_total_after_validation": len(valid_sft_rows),
+        "sft_quarantine_count": len(quarantined_sft_rows),
+        "sft_languages_after_validation": count_by_language(valid_sft_rows),
         "sft_datasets_before_sampling": count_by_dataset(all_sft_rows),
-        "sft_datasets_after_sampling": count_by_dataset(sft_rows),
+        "sft_datasets_after_validation": count_by_dataset(valid_sft_rows),
+        "sft_validation_summary": sft_validation_summary,
         "clinical_eval_count": len(clinical_eval_rows),
         "clinical_eval_languages": count_by_language(clinical_eval_rows),
         "remaining_sft_after_clinical_split": len(remaining_sft_rows),
@@ -188,9 +255,12 @@ def main() -> None:
             "val": count_by_language(sft_splits["val"]),
             "test": count_by_language(sft_splits["test"]),
         },
-        "dpo_total": len(all_dpo_rows),
-        "dpo_datasets": count_by_dataset(all_dpo_rows),
-        "dpo_languages": count_by_language(all_dpo_rows),
+        "dpo_total_before_validation": len(all_dpo_rows),
+        "dpo_total_after_validation": len(valid_dpo_rows),
+        "dpo_quarantine_count": len(quarantined_dpo_rows),
+        "dpo_datasets": count_by_dataset(valid_dpo_rows),
+        "dpo_languages": count_by_language(valid_dpo_rows),
+        "dpo_validation_summary": dpo_validation_summary,
         "dpo_splits": {
             "train": len(dpo_splits["train"]),
             "val": len(dpo_splits["val"]),
@@ -203,8 +273,10 @@ def main() -> None:
 
     print(f"Aggregated at: {aggregated_at}")
     print(f"SFT total avant sampling: {len(all_sft_rows)}")
-    print(f"SFT total après sampling: {len(sft_rows)}")
-    print(f"SFT languages: {count_by_language(sft_rows)}")
+    print(f"SFT total après sampling avant anonymisation: {len(sampled_sft_rows)}")
+    print(f"SFT total après validation: {len(valid_sft_rows)}")
+    print(f"SFT quarantaine: {len(quarantined_sft_rows)}")
+    print(f"SFT languages: {count_by_language(valid_sft_rows)}")
     print(f"Clinical eval: {len(clinical_eval_rows)}")
     print(f"Clinical eval languages: {count_by_language(clinical_eval_rows)}")
     print(f"Remaining SFT after clinical split: {len(remaining_sft_rows)}")
@@ -213,7 +285,9 @@ def main() -> None:
         f"val={len(sft_splits['val'])}, "
         f"test={len(sft_splits['test'])}"
     )
-    print(f"DPO total: {len(all_dpo_rows)}")
+    print(f"DPO total avant validation: {len(all_dpo_rows)}")
+    print(f"DPO total après validation: {len(valid_dpo_rows)}")
+    print(f"DPO quarantaine: {len(quarantined_dpo_rows)}")
     print(
         f"DPO splits -> train={len(dpo_splits['train'])}, "
         f"val={len(dpo_splits['val'])}, "
