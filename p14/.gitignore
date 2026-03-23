@@ -1,5 +1,6 @@
 .data/
 .env
+artifacts/
 
 # Python cache
 __pycache__/
