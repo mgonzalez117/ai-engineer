@@ -166,7 +166,8 @@ def main() -> None:
         save_steps=50,
         save_total_limit=2,
         fp16=torch.cuda.is_available(),
-        report_to="none",
+        report_to="wandb",
+        run_name="sft-qwen3",
         remove_unused_columns=False,
         seed=SEED,
     )
