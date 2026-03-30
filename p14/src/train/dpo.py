@@ -22,7 +22,7 @@ except Exception as exc:
     ) from exc
 
 from src.dataset.io import PROCESSED_DIR
-from src.train.wandb_utils import configure_wandb_env, print_wandb_env
+from src.train.wandb_utils import configure_wandb_env, download_wandb_artifact_dir, print_wandb_env, resolve_wandb_artifact_ref
 
 class DPOTrainerCompat(DPOTrainer):
     """
@@ -189,12 +189,6 @@ def checkpoint_step(path: Path) -> int:
     return int(match.group(1)) if match else -1
 
 
-def artifact_version(value: str | None) -> int:
-    if not value:
-        return -1
-    match = re.match(r"v(\d+)", value)
-    return int(match.group(1)) if match else -1
-
 
 def is_adapter_dir(path: Path) -> bool:
     return (path / "adapter_config.json").exists() and (path / "adapter_model.safetensors").exists()
@@ -219,54 +213,16 @@ def find_adapter_dir(root: Path) -> Path:
     raise FileNotFoundError(f"No LoRA adapter found under: {root}")
 
 
-def resolve_wandb_artifact_ref() -> str:
-    if SFT_WANDB_ARTIFACT:
-        return SFT_WANDB_ARTIFACT
-
-    if not SFT_WANDB_RUN_PATH:
-        raise ValueError(
-            "Set SFT_WANDB_RUN_PATH (entity/project/run_id) or SFT_WANDB_ARTIFACT (entity/project/artifact:alias)."
-        )
-
-    import wandb
-
-    api = wandb.Api()
-    run = api.run(SFT_WANDB_RUN_PATH)
-
-    candidates = [artifact for artifact in run.logged_artifacts() if getattr(artifact, "type", "") == "model"]
-    if not candidates:
-        raise ValueError(f"No model artifact found for W&B run: {SFT_WANDB_RUN_PATH}")
-
-    checkpoint_candidates = [a for a in candidates if "checkpoint" in str(getattr(a, "name", "")).lower()]
-    pool = checkpoint_candidates or candidates
-
-    latest = max(pool, key=lambda a: artifact_version(getattr(a, "version", None)))
-    name = str(getattr(latest, "name", "")).strip()
-    version = str(getattr(latest, "version", "")).strip()
-
-    if not name:
-        raise ValueError(f"Could not resolve artifact reference from run: {SFT_WANDB_RUN_PATH}")
-
-    ref = name if ":" in name else f"{name}:{version}"
-
-    print("Resolved SFT artifact from run:", ref)
-    return ref
-
 
 def download_adapter_from_wandb() -> Path:
-    import wandb
-
-    artifact_ref = resolve_wandb_artifact_ref()
-    api = wandb.Api()
-    artifact = api.artifact(artifact_ref)
-
-    download_root = Path(SFT_DOWNLOAD_DIR)
-    if download_root.exists():
-        shutil.rmtree(download_root)
-    download_root.mkdir(parents=True, exist_ok=True)
-
-    downloaded_dir = Path(artifact.download(root=str(download_root)))
-    print("Downloaded W&B artifact to:", downloaded_dir)
+    artifact_ref = resolve_wandb_artifact_ref(
+        explicit_artifact=SFT_WANDB_ARTIFACT,
+        run_path=SFT_WANDB_RUN_PATH,
+    )
+    downloaded_dir = download_wandb_artifact_dir(
+        artifact_ref=artifact_ref,
+        download_root=Path(SFT_DOWNLOAD_DIR),
+    )
 
     adapter_dir = find_adapter_dir(downloaded_dir)
     print("Resolved adapter dir:", adapter_dir)
