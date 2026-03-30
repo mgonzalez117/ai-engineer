@@ -19,6 +19,7 @@ from transformers import (
 )
 
 from src.dataset.io import PROCESSED_DIR
+from src.train.wandb_utils import configure_wandb_env, print_wandb_env
 
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3-1.7B-Base")
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "artifacts/sft")
@@ -34,10 +35,7 @@ LEARNING_RATE = float(os.getenv("LEARNING_RATE", "2e-4"))
 NUM_EPOCHS = float(os.getenv("NUM_EPOCHS", "1"))
 SEED = int(os.getenv("SEED", "42"))
 
-WANDB_LOG_MODEL = os.getenv("WANDB_LOG_MODEL", "checkpoint")
-os.environ["WANDB_LOG_MODEL"] = WANDB_LOG_MODEL
-WANDB_PROJECT = os.getenv("WANDB_PROJECT", "chsa-finetuning")
-os.environ["WANDB_PROJECT"] = WANDB_PROJECT
+WANDB_PROJECT, WANDB_LOG_MODEL = configure_wandb_env()
 
 def build_prompt(example: dict) -> tuple[str, str]:
     instruction = example["instruction"].strip()
@@ -156,8 +154,7 @@ def main() -> None:
     print("CUDA available:", torch.cuda.is_available())
     if torch.cuda.is_available():
         print("GPU:", torch.cuda.get_device_name(0))
-    print("W&B project:", os.environ.get("WANDB_PROJECT"))
-    print("W&B model artifact logging:", os.environ.get("WANDB_LOG_MODEL"))
+    print_wandb_env(WANDB_PROJECT, WANDB_LOG_MODEL)
     data_files = {
         "train": TRAIN_FILE,
         "validation": VAL_FILE,
