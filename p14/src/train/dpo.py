@@ -12,9 +12,9 @@ from typing import Any
 import torch
 from datasets import load_dataset
 from peft import LoraConfig, PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer
 try:
-    from trl import DPOTrainer
+    from trl import DPOConfig, DPOTrainer
 except Exception as exc:
     raise RuntimeError(
         "Failed to import DPOTrainer. Install compatible versions, for example: "
@@ -22,6 +22,35 @@ except Exception as exc:
     ) from exc
 
 from src.dataset.io import PROCESSED_DIR
+
+class DPOTrainerCompat(DPOTrainer):
+    """
+    Compatibility shim for mismatched TRL/Transformers Trainer APIs.
+    """
+
+    def get_batch_samples(self, *args, **kwargs):
+        # transformers.Trainer training-loop call signature
+        if len(args) >= 2 and isinstance(args[1], int):
+            return Trainer.get_batch_samples(self, *args, **kwargs)
+
+        # TRL DPO internal call signature
+        return DPOTrainer.get_batch_samples(self, *args, **kwargs)
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        # transformers may pass num_items_in_batch (and potentially other kwargs)
+        # that older TRL DPOTrainer.compute_loss does not accept.
+        return DPOTrainer.compute_loss(
+            self,
+            model,
+            inputs,
+            return_outputs=return_outputs,
+        )
+
+    def log(self, logs, start_time=None, **kwargs):
+        # transformers.Trainer may call log(logs, start_time=...)
+        # while TRL DPOTrainer expects only log(logs).
+        return DPOTrainer.log(self, logs)
+
 
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3-1.7B-Base")
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "artifacts/dpo")
@@ -42,6 +71,8 @@ SEED = int(os.getenv("SEED", "42"))
 
 WANDB_LOG_MODEL = os.getenv("WANDB_LOG_MODEL", "checkpoint")
 os.environ["WANDB_LOG_MODEL"] = WANDB_LOG_MODEL
+WANDB_PROJECT = os.getenv("WANDB_PROJECT", "chsa-finetuning")
+os.environ["WANDB_PROJECT"] = WANDB_PROJECT
 
 # DPO start point:
 # - preferred: fetch last SFT checkpoint from W&B run via SFT_WANDB_RUN_PATH
@@ -120,6 +151,39 @@ def save_eval_report(report: dict[str, Any]) -> None:
     with report_path.open("w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
     print(f"Saved evaluation report: {report_path}")
+
+
+def build_eval_only_trainer(
+    trained_model: Any,
+    eval_dataset: Any,
+    training_args: DPOConfig,
+    tokenizer: Any,
+) -> DPOTrainerCompat:
+    """
+    Build a DPO trainer for standalone evaluation on an external split.
+    Some TRL versions accept train_dataset=None, others expect a dataset.
+    """
+    try:
+        return DPOTrainerCompat(
+            model=trained_model,
+            ref_model=None,
+            args=training_args,
+            train_dataset=None,
+            eval_dataset=eval_dataset,
+            tokenizer=tokenizer,
+            peft_config=None,
+        )
+    except Exception:
+        fallback_train = eval_dataset.select(range(min(1, len(eval_dataset))))
+        return DPOTrainerCompat(
+            model=trained_model,
+            ref_model=None,
+            args=training_args,
+            train_dataset=fallback_train,
+            eval_dataset=eval_dataset,
+            tokenizer=tokenizer,
+            peft_config=None,
+        )
 
 
 def checkpoint_step(path: Path) -> int:
@@ -252,6 +316,7 @@ def main() -> None:
     print("CUDA available:", torch.cuda.is_available())
     if torch.cuda.is_available():
         print("GPU:", torch.cuda.get_device_name(0))
+    print("W&B project:", os.environ.get("WANDB_PROJECT"))
     print("W&B model artifact logging:", os.environ.get("WANDB_LOG_MODEL"))
 
     loaded_from_sft_adapter = False
@@ -316,13 +381,16 @@ def main() -> None:
             ],
         )
 
-    training_args = TrainingArguments(
+    training_args = DPOConfig(
         output_dir=OUTPUT_DIR,
         num_train_epochs=NUM_EPOCHS,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         gradient_accumulation_steps=GRAD_ACC_STEPS,
         learning_rate=LEARNING_RATE,
+        beta=BETA,
+        max_length=MAX_LENGTH,
+        max_prompt_length=MAX_PROMPT_LENGTH,
         logging_steps=10,
         eval_strategy="steps",
         eval_steps=50,
@@ -335,34 +403,45 @@ def main() -> None:
         seed=SEED,
     )
 
-    trainer = DPOTrainer(
+    trainer = DPOTrainerCompat(
         model=model,
         ref_model=None,
         args=training_args,
-        beta=BETA,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         tokenizer=tokenizer,
-        max_length=MAX_LENGTH,
-        max_prompt_length=MAX_PROMPT_LENGTH,
         peft_config=peft_config,
     )
 
     print("Starting DPO training...")
     trainer.train()
 
+    # Save right after training so final-eval issues never lose trained weights.
+    print(f"Saving adapter/model to: {OUTPUT_DIR}")
+    trainer.model.save_pretrained(OUTPUT_DIR)
+    tokenizer.save_pretrained(OUTPUT_DIR)
+
     print("Running final validation evaluation...")
-    val_metrics = trainer.evaluate(eval_dataset=val_dataset, metric_key_prefix="val_final")
+    # Important: do not pass eval_dataset here. DPOTrainer has already prepared
+    # its internal eval dataset, while passing the raw one can trigger KeyError
+    # on missing tokenized columns (e.g., chosen_input_ids).
+    val_metrics = trainer.evaluate(metric_key_prefix="val_final")
     trainer.log(val_metrics)
 
     test_metrics = None
     if test_dataset is not None:
-        print("Running final test evaluation...")
-        test_metrics = trainer.evaluate(
-            eval_dataset=test_dataset,
-            metric_key_prefix="test_final",
-        )
-        trainer.log(test_metrics)
+        if len(test_dataset) == 0:
+            print("Skipping final test evaluation: no valid test rows after preprocessing.")
+        else:
+            print("Running final test evaluation...")
+            test_trainer = build_eval_only_trainer(
+                trained_model=trainer.model,
+                eval_dataset=test_dataset,
+                training_args=training_args,
+                tokenizer=tokenizer,
+            )
+            test_metrics = test_trainer.evaluate(metric_key_prefix="test_final")
+            trainer.log(test_metrics)
 
     report = {
         "evaluated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
@@ -379,14 +458,9 @@ def main() -> None:
     }
     save_eval_report(report)
 
-    print(f"Saving adapter/model to: {OUTPUT_DIR}")
-    trainer.model.save_pretrained(OUTPUT_DIR)
-    tokenizer.save_pretrained(OUTPUT_DIR)
-
     print("Done.")
 
 
 if __name__ == "__main__":
     main()
-
 

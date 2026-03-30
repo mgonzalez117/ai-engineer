@@ -36,6 +36,8 @@ SEED = int(os.getenv("SEED", "42"))
 
 WANDB_LOG_MODEL = os.getenv("WANDB_LOG_MODEL", "checkpoint")
 os.environ["WANDB_LOG_MODEL"] = WANDB_LOG_MODEL
+WANDB_PROJECT = os.getenv("WANDB_PROJECT", "chsa-finetuning")
+os.environ["WANDB_PROJECT"] = WANDB_PROJECT
 
 def build_prompt(example: dict) -> tuple[str, str]:
     instruction = example["instruction"].strip()
@@ -154,6 +156,7 @@ def main() -> None:
     print("CUDA available:", torch.cuda.is_available())
     if torch.cuda.is_available():
         print("GPU:", torch.cuda.get_device_name(0))
+    print("W&B project:", os.environ.get("WANDB_PROJECT"))
     print("W&B model artifact logging:", os.environ.get("WANDB_LOG_MODEL"))
     data_files = {
         "train": TRAIN_FILE,
@@ -288,5 +291,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 

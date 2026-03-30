@@ -26,6 +26,7 @@ services:
     environment:
       HF_HOME: /root/.cache/huggingface
       WANDB_API_KEY: ${WANDB_API_KEY}
+      WANDB_PROJECT: ${WANDB_PROJECT:-chsa-finetuning}
       MODEL_NAME: ${MODEL_NAME}
     ipc: host
     stdin_open: true
@@ -45,3 +46,4 @@ networks:
 
 volumes:
   hf_cache:
+
