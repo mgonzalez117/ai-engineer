@@ -1,9 +1,9 @@
 torch
-transformers>=4.51.0
+transformers==4.51.3
 accelerate>=1.4.0
 datasets==2.19.0
 peft>=0.10.0
-trl>=0.8.6
+trl==0.11.4
 sentencepiece
 scipy
 pandas

@@ -4,7 +4,8 @@ from typing import Any
 
 from .anonymize import TEXT_FIELDS_DPO, TEXT_FIELDS_SFT, build_analyzer, ALLOWED_ENTITIES
 
-SCORE_THRESHOLD = 0.7
+# Seuil plus bas que l'anonymisation
+SCORE_THRESHOLD = 0.6
 
 def serialize_analyzer_result(result: Any) -> dict[str, Any]:
     return {

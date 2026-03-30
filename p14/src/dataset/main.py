@@ -158,7 +158,7 @@ def main() -> None:
         dpo_validation_results,
     )
 
-    # 6) Extraction du jeu clinique séparé AVANT les splits
+    # 6) Extraction du jeu clinique séparé AVANT les splits (éviter data leakage)
     clinical_eval_rows = build_clinical_eval(valid_sft_rows, max_examples=200, seed=42)
 
     # 7) Suppression du jeu clinique du pool principal

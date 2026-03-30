@@ -1,6 +1,7 @@
 .data/
 .env
 artifacts/
+wandb/
 
 # Python cache
 __pycache__/

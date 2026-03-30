@@ -1,0 +1,41 @@
+name: Run Tests (p14)
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - "p14/**"
+      - ".github/workflows/test-p14.yml"
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - "p14/**"
+      - ".github/workflows/test-p14.yml"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: p14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: |
+          poetry config virtualenvs.create false
+          poetry install --no-interaction --no-ansi --no-root
+
+      - name: Run tests
+        run: poetry run pytest tests -v

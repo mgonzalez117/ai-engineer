@@ -26,9 +26,10 @@ Nous utilisons les datasets suivants :
 Lien : https://huggingface.co/datasets/ANR-MALADES/MediQAl
 
 #### Nature du dataset
-MediQAl est un dataset français de QA médicale conçu pour évaluer à la fois le rappel factuel et le raisonnement clinique. Il contient 32 603 questions sur 41 sujets médicaux et trois configurations : mcqu, mcqm et oeq. Chaque question est annotée Understanding ou Reasoning
+MediQAl est un dataset français de QA médicale conçu pour évaluer à la fois le rappel factuel (retrouver une information précise) et le raisonnement clinique.
+Il contient 32 603 questions sur 41 sujets médicaux et trois configurations : mcqu, mcqm et oeq. Chaque question est annotée Understanding ou Reasoning
 
-/!\  MediQAl n’est pas un dataset homogène. Il contient en réalité deux natures de tâches :
+/!\  MediQAl n’est pas un dataset homogène. Il contient en réalité :
 
 * des questions ouvertes (oeq)
 * des QCM (mcqu, mcqm)
@@ -56,7 +57,7 @@ Lien : https://huggingface.co/datasets/keivalya/MedQuad-MedicalQnADataset
 MedQuAD est un dataset anglais de question-réponse ouverte. La version Hugging Face affichée contient un split train d’environ 16,4k lignes et trois champs visibles : qtype, Question, Answer. qtype a 16 classes.
 
 #### Apport métier
-MedQuAD apporte des exemples de QA ouverte en anglais. Il est plus approprié pour du SFT de type open QA, pas du MCQ et pas du preference learning.
+MedQuAD apporte des exemples de QA ouverte en anglais. Il est plus approprié pour du SFT de type open QA, pas du QCM et pas du preference learning.
 
 #### Champs
 
@@ -124,3 +125,32 @@ Voici la structure qui a été retenue :
   }
 }
 ```
+## Entrainement
+
+Pipeline:
+1. Preparation des jeux de données
+2. Entrainement SFT
+3. Entrainement DPO à partir du modèle SFT
+
+Commandes minimales (dans le conteneur `p14-train`):
+
+```bash
+python -m src.dataset.main
+python -m src.train.sft
+python -m src.train.dpo
+```
+
+Optionnel: demarrer DPO depuis un run SFT W&B (au lieu du local):
+
+```bash
+SFT_WANDB_RUN_PATH=<entity>/<project>/<run_id> python -m src.train.dpo
+```
+
+Notes:
+- Toujours local: le SFT ecrit l'adapter final + checkpoints dans `artifacts/sft`.
+- Optionnel W&B: les checkpoints/modèles sont aussi uploadés vers W&B si W&B est actif.
+- Le mode d'upload est contrôlé par `WANDB_LOG_MODEL`:
+  - `checkpoint`: upload des checkpoints (et modèle final)
+  - `end`: upload du modèle final seulement
+- Si `SFT_WANDB_RUN_PATH` n'est pas renseigné, DPO charge l'adapter local (`artifacts/sft`) par défaut.
+
