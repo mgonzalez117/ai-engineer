@@ -22,6 +22,7 @@ except Exception as exc:
     ) from exc
 
 from src.dataset.io import PROCESSED_DIR
+from src.train.eval_utils import clinical_metrics_for_logging, evaluate_clinical_holdout
 from src.train.wandb_utils import configure_wandb_env, download_wandb_artifact_dir, print_wandb_env, resolve_wandb_artifact_ref
 
 class DPOTrainerCompat(DPOTrainer):
@@ -59,6 +60,7 @@ OUTPUT_DIR = os.getenv("OUTPUT_DIR", "artifacts/dpo")
 TRAIN_FILE = str(PROCESSED_DIR / "dpo_train.jsonl")
 VAL_FILE = str(PROCESSED_DIR / "dpo_val.jsonl")
 TEST_FILE = str(PROCESSED_DIR / "dpo_test.jsonl")
+CLINICAL_EVAL_FILE = str(PROCESSED_DIR / "clinical_eval.jsonl")
 
 MAX_LENGTH = int(os.getenv("DPO_MAX_LENGTH", "512"))
 MAX_PROMPT_LENGTH = int(os.getenv("DPO_MAX_PROMPT_LENGTH", "384"))
@@ -69,6 +71,9 @@ GRAD_ACC_STEPS = int(os.getenv("GRAD_ACC_STEPS", "16"))
 LEARNING_RATE = float(os.getenv("LEARNING_RATE", "5e-6"))
 NUM_EPOCHS = float(os.getenv("NUM_EPOCHS", "1"))
 SEED = int(os.getenv("SEED", "42"))
+CLINICAL_EVAL_ENABLED = os.getenv("CLINICAL_EVAL_ENABLED", "1") == "1"
+CLINICAL_EVAL_MAX_LENGTH = int(os.getenv("CLINICAL_EVAL_MAX_LENGTH", str(MAX_LENGTH)))
+CLINICAL_EVAL_BATCH_SIZE = int(os.getenv("CLINICAL_EVAL_BATCH_SIZE", str(BATCH_SIZE)))
 
 WANDB_PROJECT, WANDB_LOG_MODEL = configure_wandb_env()
 
@@ -396,6 +401,20 @@ def main() -> None:
             test_metrics = test_trainer.evaluate(metric_key_prefix="test_final")
             trainer.log(test_metrics)
 
+    clinical_eval_metrics = None
+    if CLINICAL_EVAL_ENABLED:
+        print("Running clinical holdout evaluation...")
+        clinical_eval_metrics = evaluate_clinical_holdout(
+            model=trainer.model,
+            tokenizer=tokenizer,
+            clinical_eval_file=CLINICAL_EVAL_FILE,
+            max_seq_length=CLINICAL_EVAL_MAX_LENGTH,
+            batch_size=CLINICAL_EVAL_BATCH_SIZE,
+        )
+        trainer.log(clinical_metrics_for_logging(clinical_eval_metrics))
+    else:
+        print("Clinical holdout evaluation disabled (CLINICAL_EVAL_ENABLED=0).")
+
     report = {
         "evaluated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "model_name": MODEL_NAME,
@@ -408,6 +427,7 @@ def main() -> None:
         "sft_wandb_artifact": SFT_WANDB_ARTIFACT or None,
         "val_final": val_metrics,
         "test_final": test_metrics,
+        "clinical_eval": clinical_eval_metrics,
     }
     save_eval_report(report)
 
@@ -416,4 +436,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

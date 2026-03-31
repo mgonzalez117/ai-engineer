@@ -154,3 +154,16 @@ Notes:
   - `end`: upload du modèle final seulement
 - Si `SFT_WANDB_RUN_PATH` n'est pas renseigné, DPO charge l'adapter local (`artifacts/sft`) par défaut.
 
+## Evaluation clinique
+
+Le jeu `clinical_eval.jsonl` est un holdout separe (pas utilise pour l'entrainement).
+
+- `python -m src.train.sft` lance une evaluation clinique en fin de run.
+- `python -m src.train.dpo` lance aussi une evaluation clinique en fin de run.
+- Les metriques sont logguees dans W&B avec le prefixe `clinical_eval/`.
+- Les resultats sont aussi ecrits dans `artifacts/sft/eval_report.json` et `artifacts/dpo/eval_report.json`.
+
+Variables utiles (optionnelles):
+- `CLINICAL_EVAL_ENABLED` (defaut: `1`)
+- `CLINICAL_EVAL_MAX_LENGTH` (defaut: max length du run)
+- `CLINICAL_EVAL_BATCH_SIZE` (defaut: batch size du run)
