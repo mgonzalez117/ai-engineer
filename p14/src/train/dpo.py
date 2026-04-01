@@ -11,13 +11,13 @@ from typing import Any
 
 import torch
 from datasets import load_dataset
-from peft import LoraConfig, PeftModel
+from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer
 try:
     from trl import DPOConfig, DPOTrainer
 except Exception as exc:
     raise RuntimeError(
-        "Failed to import DPOTrainer. Install compatible versions, for example: "
+        "Impossible d'importer DPOTrainer. Installez des versions compatibles, par exemple : "
         "transformers==4.51.3 and trl==0.11.4."
     ) from exc
 
@@ -27,20 +27,20 @@ from src.train.wandb_utils import configure_wandb_env, download_wandb_artifact_d
 
 class DPOTrainerCompat(DPOTrainer):
     """
-    Compatibility shim for mismatched TRL/Transformers Trainer APIs.
+    Couche de compatibilité pour des API Trainer TRL/Transformers non alignées.
     """
 
     def get_batch_samples(self, *args, **kwargs):
-        # transformers.Trainer training-loop call signature
+        # Signature d'appel de la boucle d'entraînement de transformers.Trainer
         if len(args) >= 2 and isinstance(args[1], int):
             return Trainer.get_batch_samples(self, *args, **kwargs)
 
-        # TRL DPO internal call signature
+        # Signature d'appel interne de TRL DPO
         return DPOTrainer.get_batch_samples(self, *args, **kwargs)
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        # transformers may pass num_items_in_batch (and potentially other kwargs)
-        # that older TRL DPOTrainer.compute_loss does not accept.
+        # transformers peut passer num_items_in_batch (et potentiellement d'autres kwargs)
+        # que les anciennes versions de TRL DPOTrainer.compute_loss n'acceptent pas.
         return DPOTrainer.compute_loss(
             self,
             model,
@@ -49,8 +49,8 @@ class DPOTrainerCompat(DPOTrainer):
         )
 
     def log(self, logs, start_time=None, **kwargs):
-        # transformers.Trainer may call log(logs, start_time=...)
-        # while TRL DPOTrainer expects only log(logs).
+        # transformers.Trainer peut appeler log(logs, start_time=...)
+        # alors que TRL DPOTrainer attend uniquement log(logs).
         return DPOTrainer.log(self, logs)
 
 
@@ -77,11 +77,10 @@ CLINICAL_EVAL_BATCH_SIZE = int(os.getenv("CLINICAL_EVAL_BATCH_SIZE", str(BATCH_S
 
 WANDB_PROJECT, WANDB_LOG_MODEL = configure_wandb_env()
 
-# DPO start point:
-# - preferred: fetch last SFT checkpoint from W&B run via SFT_WANDB_RUN_PATH
-# - alternative: explicit artifact via SFT_WANDB_ARTIFACT
-# - fallback: local adapter in artifacts/sft
-USE_SFT_ADAPTER = os.getenv("DPO_USE_SFT_ADAPTER", "1") == "1"
+# Point de départ DPO (utilise toujours un adaptateur SFT précédent) :
+# - recommandé : récupérer le dernier checkpoint SFT depuis un run W&B via SFT_WANDB_RUN_PATH
+# - alternative : artifact explicite via SFT_WANDB_ARTIFACT
+# - secours : adaptateur local dans artifacts/sft
 SFT_WANDB_RUN_PATH = os.getenv("SFT_WANDB_RUN_PATH", "").strip()
 SFT_WANDB_ARTIFACT = os.getenv("SFT_WANDB_ARTIFACT", "").strip()
 SFT_LOCAL_DIR = os.getenv("SFT_LOCAL_DIR", "artifacts/sft")
@@ -153,7 +152,7 @@ def save_eval_report(report: dict[str, Any]) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with report_path.open("w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
-    print(f"Saved evaluation report: {report_path}")
+    print(f"Rapport d'évaluation sauvegardé : {report_path}")
 
 
 def build_eval_only_trainer(
@@ -163,8 +162,8 @@ def build_eval_only_trainer(
     tokenizer: Any,
 ) -> DPOTrainerCompat:
     """
-    Build a DPO trainer for standalone evaluation on an external split.
-    Some TRL versions accept train_dataset=None, others expect a dataset.
+    Construit un trainer DPO pour une évaluation autonome sur un split externe.
+    Certaines versions de TRL acceptent train_dataset=None, d'autres exigent un dataset.
     """
     try:
         return DPOTrainerCompat(
@@ -215,7 +214,7 @@ def find_adapter_dir(root: Path) -> Path:
         if is_adapter_dir(candidate):
             return candidate
 
-    raise FileNotFoundError(f"No LoRA adapter found under: {root}")
+    raise FileNotFoundError(f"Aucun adaptateur LoRA trouvé sous : {root}")
 
 
 
@@ -230,7 +229,7 @@ def download_adapter_from_wandb() -> Path:
     )
 
     adapter_dir = find_adapter_dir(downloaded_dir)
-    print("Resolved adapter dir:", adapter_dir)
+    print("Dossier d'adaptateur résolu :", adapter_dir)
     return adapter_dir
 
 
@@ -241,25 +240,25 @@ def resolve_sft_adapter_dir() -> Path:
     local_dir = Path(SFT_LOCAL_DIR)
     if not local_dir.exists():
         raise FileNotFoundError(
-            f"SFT local dir not found: {local_dir}. Set SFT_WANDB_RUN_PATH/SFT_WANDB_ARTIFACT or SFT_LOCAL_DIR."
+            f"Dossier local SFT introuvable : {local_dir}. Définissez SFT_WANDB_RUN_PATH/SFT_WANDB_ARTIFACT ou SFT_LOCAL_DIR."
         )
     adapter_dir = find_adapter_dir(local_dir)
-    print("Resolved local adapter dir:", adapter_dir)
+    print("Dossier d'adaptateur local résolu :", adapter_dir)
     return adapter_dir
 
 
 def main() -> None:
     output_path = Path(OUTPUT_DIR)
     if output_path.exists():
-        print(f"Removing existing output dir: {output_path}")
+        print(f"Suppression du dossier de sortie existant : {output_path}")
         shutil.rmtree(output_path)
 
-    print(f"Loading tokenizer: {MODEL_NAME}")
+    print(f"Chargement du tokenizer : {MODEL_NAME}")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    print(f"Loading base model: {MODEL_NAME}")
+    print(f"Chargement du modèle de base : {MODEL_NAME}")
     dtype = torch.float16 if torch.cuda.is_available() else torch.float32
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_NAME,
@@ -272,17 +271,14 @@ def main() -> None:
 
     model.config.use_cache = False
 
-    print("CUDA available:", torch.cuda.is_available())
+    print("CUDA disponible :", torch.cuda.is_available())
     if torch.cuda.is_available():
-        print("GPU:", torch.cuda.get_device_name(0))
+        print("GPU :", torch.cuda.get_device_name(0))
     print_wandb_env(WANDB_PROJECT, WANDB_LOG_MODEL)
 
-    loaded_from_sft_adapter = False
-    if USE_SFT_ADAPTER:
-        adapter_dir = resolve_sft_adapter_dir()
-        model = PeftModel.from_pretrained(model, str(adapter_dir), is_trainable=True)
-        loaded_from_sft_adapter = True
-        print("Loaded trainable SFT adapter:", adapter_dir)
+    adapter_dir = resolve_sft_adapter_dir()
+    model = PeftModel.from_pretrained(model, str(adapter_dir), is_trainable=True)
+    print("Adaptateur SFT entraînable chargé :", adapter_dir)
 
     data_files = {
         "train": TRAIN_FILE,
@@ -293,7 +289,7 @@ def main() -> None:
         data_files["test"] = TEST_FILE
 
     dataset = load_dataset("json", data_files=data_files)
-    print("Raw train columns:", dataset["train"].column_names)
+    print("Colonnes brutes train :", dataset["train"].column_names)
 
     formatted_dataset = dataset.map(
         format_dpo_example,
@@ -308,36 +304,18 @@ def main() -> None:
     val_dataset = val_raw.filter(has_valid_preference)
     test_dataset = test_raw.filter(has_valid_preference) if test_raw is not None else None
 
-    print(f"Train rows kept: {len(train_dataset)}/{len(train_raw)}")
-    print(f"Validation rows kept: {len(val_dataset)}/{len(val_raw)}")
+    print(f"Lignes train conservées : {len(train_dataset)}/{len(train_raw)}")
+    print(f"Lignes validation conservées : {len(val_dataset)}/{len(val_raw)}")
     if test_raw is not None and test_dataset is not None:
-        print(f"Test rows kept: {len(test_dataset)}/{len(test_raw)}")
+        print(f"Lignes test conservées : {len(test_dataset)}/{len(test_raw)}")
 
     if len(train_dataset) == 0:
-        raise ValueError("No valid DPO training rows found after preprocessing.")
+        raise ValueError("Aucune ligne DPO d'entraînement valide trouvée après prétraitement.")
     if len(val_dataset) == 0:
-        raise ValueError("No valid DPO validation rows found after preprocessing.")
+        raise ValueError("Aucune ligne DPO de validation valide trouvée après prétraitement.")
 
-    print("First preprocessed train row:", train_dataset[0])
+    print("Première ligne train prétraitée :", train_dataset[0])
 
-    peft_config = None
-    if not loaded_from_sft_adapter:
-        peft_config = LoraConfig(
-            r=16,
-            lora_alpha=32,
-            lora_dropout=0.05,
-            bias="none",
-            task_type="CAUSAL_LM",
-            target_modules=[
-                "q_proj",
-                "k_proj",
-                "v_proj",
-                "o_proj",
-                "up_proj",
-                "down_proj",
-                "gate_proj",
-            ],
-        )
 
     training_args = DPOConfig(
         output_dir=OUTPUT_DIR,
@@ -368,30 +346,30 @@ def main() -> None:
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         tokenizer=tokenizer,
-        peft_config=peft_config,
+        peft_config=None,
     )
 
-    print("Starting DPO training...")
+    print("Démarrage de l'entraînement DPO...")
     trainer.train()
 
-    # Save right after training so final-eval issues never lose trained weights.
-    print(f"Saving adapter/model to: {OUTPUT_DIR}")
+    # Sauvegarde juste après l'entraînement pour que des soucis d'éval finale ne fassent jamais perdre les poids entraînés.
+    print(f"Sauvegarde de l'adaptateur/modèle vers : {OUTPUT_DIR}")
     trainer.model.save_pretrained(OUTPUT_DIR)
     tokenizer.save_pretrained(OUTPUT_DIR)
 
-    print("Running final validation evaluation...")
-    # Important: do not pass eval_dataset here. DPOTrainer has already prepared
-    # its internal eval dataset, while passing the raw one can trigger KeyError
-    # on missing tokenized columns (e.g., chosen_input_ids).
+    print("Lancement de l'évaluation finale validation...")
+    # Important : ne pas passer eval_dataset ici. DPOTrainer a déjà préparé
+    # son dataset d'évaluation interne, alors que passer le brut peut provoquer un KeyError
+    # sur des colonnes tokenisées absentes (ex. : chosen_input_ids).
     val_metrics = trainer.evaluate(metric_key_prefix="val_final")
     trainer.log(val_metrics)
 
     test_metrics = None
     if test_dataset is not None:
         if len(test_dataset) == 0:
-            print("Skipping final test evaluation: no valid test rows after preprocessing.")
+            print("Évaluation finale test ignorée : aucune ligne test valide après prétraitement.")
         else:
-            print("Running final test evaluation...")
+            print("Lancement de l'évaluation finale test...")
             test_trainer = build_eval_only_trainer(
                 trained_model=trainer.model,
                 eval_dataset=test_dataset,
@@ -403,7 +381,7 @@ def main() -> None:
 
     clinical_eval_metrics = None
     if CLINICAL_EVAL_ENABLED:
-        print("Running clinical holdout evaluation...")
+        print("Lancement de l'évaluation sur jeu clinique indépendant...")
         clinical_eval_metrics = evaluate_clinical_holdout(
             model=trainer.model,
             tokenizer=tokenizer,
@@ -413,7 +391,7 @@ def main() -> None:
         )
         trainer.log(clinical_metrics_for_logging(clinical_eval_metrics))
     else:
-        print("Clinical holdout evaluation disabled (CLINICAL_EVAL_ENABLED=0).")
+        print("Évaluation clinique indépendante désactivée (CLINICAL_EVAL_ENABLED=0).")
 
     report = {
         "evaluated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
@@ -431,7 +409,7 @@ def main() -> None:
     }
     save_eval_report(report)
 
-    print("Done.")
+    print("Terminé.")
 
 
 if __name__ == "__main__":
