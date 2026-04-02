@@ -62,7 +62,7 @@ def resolve_project_path(api: Any) -> str:
     raise ValueError("Unable to resolve W&B entity. Set WANDB_ENTITY in CI variables.")
 
 
-def latest_dpo_artifact_ref(api: Any) -> str:
+def latest_dpo_artifact(api: Any) -> Any:
     project_path = resolve_project_path(api)
     runs = api.runs(path=project_path, order="-created_at")
 
@@ -76,12 +76,9 @@ def latest_dpo_artifact_ref(api: Any) -> str:
 
         name = str(getattr(artifact, "name", "")).strip()
         version = str(getattr(artifact, "version", "")).strip()
-        if not name:
-            continue
-
-        artifact_ref = name if ":" in name else f"{name}:{version or 'latest'}"
-        print(f"Resolved latest DPO artifact: {artifact_ref}")
-        return artifact_ref
+        run_path = "/".join(getattr(run, "path", []) or [])
+        print(f"Resolved latest DPO artifact from run {run_path}: {name}:{version}")
+        return artifact
 
     raise RuntimeError("No DPO model artifact found on W&B.")
 
@@ -115,16 +112,25 @@ def find_adapter_dir(root: Path) -> Path:
 
 
 def download_latest_dpo_adapter(api: Any) -> Path:
-    artifact_ref = latest_dpo_artifact_ref(api)
+    artifact = latest_dpo_artifact(api)
 
     if DOWNLOAD_DIR.exists():
         shutil.rmtree(DOWNLOAD_DIR)
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-    artifact = api.artifact(artifact_ref)
-    downloaded_root = Path(artifact.download(root=str(DOWNLOAD_DIR)))
-    adapter_dir = find_adapter_dir(downloaded_root)
+    try:
+        downloaded_root = Path(artifact.download(root=str(DOWNLOAD_DIR)))
+    except Exception:
+        # Fallback: force un ref pleinement qualifie (entity/project/name:version).
+        project_path = resolve_project_path(api)
+        name = str(getattr(artifact, "name", "")).strip()
+        version = str(getattr(artifact, "version", "")).strip() or "latest"
+        qualified_name = name if "/" in name else f"{project_path}/{name}"
+        qualified_ref = qualified_name if ":" in qualified_name else f"{qualified_name}:{version}"
+        print(f"Retry artifact download with qualified ref: {qualified_ref}")
+        downloaded_root = Path(api.artifact(qualified_ref).download(root=str(DOWNLOAD_DIR)))
 
+    adapter_dir = find_adapter_dir(downloaded_root)
     print(f"Downloaded adapter dir: {adapter_dir}")
     return adapter_dir
 
