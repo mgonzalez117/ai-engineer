@@ -36,6 +36,22 @@ UNSAFE_PATTERNS = [
 ]
 
 
+TRIAGE_JSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "niveau_urgence": {
+            "type": "string",
+            "enum": ["immediat", "tres urgent", "urgent", "differable"],
+        },
+        "orientation": {"type": "string"},
+        "justification": {"type": "string"},
+        "garde_fou_active": {"type": "boolean"},
+    },
+    "required": ["niveau_urgence", "orientation", "justification", "garde_fou_active"],
+    "additionalProperties": False,
+}
+
+
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=8000)
     max_tokens: int = Field(default=180, ge=1, le=2048)
@@ -145,7 +161,12 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     try:
         data = json.loads(json_text)
     except json.JSONDecodeError:
-        return fallback_triage("json invalide")
+        compact = re.sub(r",\s*}", "}", json_text)
+        compact = re.sub(r",\s*]", "]", compact)
+        try:
+            data = json.loads(compact)
+        except json.JSONDecodeError:
+            return fallback_triage("json invalide")
 
     if not isinstance(data, dict):
         return fallback_triage("format non objet")
@@ -198,11 +219,16 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
         "top_p": 0.9,
         "repetition_penalty": 1.15,
         "stop": ["\n\nDonnees patient:", "<FIN>"],
+        "guided_json": TRIAGE_JSON_SCHEMA,
     }
 
     try:
         async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
             response = await client.post(url, headers=headers, json=body)
+            if response.status_code == 400 and body.get("guided_json") is not None:
+                body_without_guidance = dict(body)
+                body_without_guidance.pop("guided_json", None)
+                response = await client.post(url, headers=headers, json=body_without_guidance)
             response.raise_for_status()
             data = response.json()
 

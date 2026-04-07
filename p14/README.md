@@ -78,7 +78,7 @@ Le workflow met a jour le pod Runpod API apres push de l'image en appelant:
 - `POST https://rest.runpod.io/v1/pods/{RUNPOD_API_POD_ID}/update`
 avec `imageName=<dockerhub_user>/p14-api:sha-<commit>`.
 
-### Tests API (latence, robustesse, tracabilite)
+### Audit API (latence, robustesse, tracabilite)
 Executer depuis `p14` avec l'API demarree:
 
 ```bash
