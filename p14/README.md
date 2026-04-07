@@ -39,7 +39,7 @@ Cela va télécharger les datasets si cela n'est pas déjà fait, dans le dossie
 - Prompt systeme lu depuis `src/api/system_prompt.txt`.
 - Variables de routage inference:
   - `VLLM_BASE_URL`
-  - `VLLM_INFERENCE_ENDPOINT` (defaut: `/v1/inference`)
+  - `VLLM_INFERENCE_ENDPOINT` (defaut: `/v1/completions`)
   - `VLLM_MODEL` (defaut recommande: `chsa-lora`)
   - `VLLM_API_KEY` (optionnel)
 
@@ -77,6 +77,23 @@ Variable GitHub requise:
 Le workflow met a jour le pod Runpod API apres push de l'image en appelant:
 - `POST https://rest.runpod.io/v1/pods/{RUNPOD_API_POD_ID}/update`
 avec `imageName=<dockerhub_user>/p14-api:sha-<commit>`.
+
+### Tests API (latence, robustesse, tracabilite)
+Executer depuis `p14` avec l'API demarree:
+
+```bash
+python -m src.api.audit.latency --base-url http://localhost:8000
+python -m src.api.audit.robustness --base-url http://localhost:8000
+python -m src.api.audit.traceability --trace-log artifacts/api/traces/interactions.jsonl
+```
+
+Rapports generes:
+- `artifacts/api/reports/latency_report.json`
+- `artifacts/api/reports/robustness_report.json`
+- `artifacts/api/reports/traceability_audit.json`
+
+Trace des interactions API:
+- `artifacts/api/traces/interactions.jsonl`
 
 ### Utiliser un serveur vLLM externe
 Configurer dans `.env`:

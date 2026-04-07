@@ -1,9 +1,12 @@
 ﻿from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
+import time
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -16,6 +19,7 @@ VLLM_INFERENCE_ENDPOINT = os.getenv("VLLM_INFERENCE_ENDPOINT", "/v1/completions"
 VLLM_MODEL = os.getenv("VLLM_MODEL", "Qwen/Qwen3-1.7B")
 VLLM_API_KEY = os.getenv("VLLM_API_KEY", "")
 REQUEST_TIMEOUT_SECONDS = float(os.getenv("REQUEST_TIMEOUT_SECONDS", "45"))
+TRACE_LOG_PATH = Path(os.getenv("TRACE_LOG_PATH", "artifacts/api/traces/interactions.jsonl"))
 
 SYSTEM_PROMPT_FILE = Path(
     os.getenv("SYSTEM_PROMPT_FILE", str(Path(__file__).with_name("system_prompt.txt")))
@@ -62,6 +66,20 @@ def load_system_prompt() -> str:
         "Tu reponds uniquement en JSON strict avec les cles: "
         "niveau_urgence, orientation, justification, garde_fou_active."
     )
+
+
+def now_utc_iso() -> str:
+    return datetime.now(UTC).isoformat()
+
+
+def write_trace(record: dict[str, Any]) -> None:
+    try:
+        TRACE_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with TRACE_LOG_PATH.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception:
+        # Logging must never block inference responses.
+        pass
 
 
 TRIAGE_SYSTEM_PROMPT = load_system_prompt()
@@ -161,6 +179,11 @@ async def health() -> dict[str, str]:
 @app.post("/v1/generate", response_model=GenerateResponse)
 async def generate(payload: GenerateRequest) -> GenerateResponse:
     request_id = str(uuid.uuid4())
+    started_at = time.perf_counter()
+    status_code = 200
+    error_message = ""
+    triage: TriageOutput | None = None
+
     url = f"{VLLM_BASE_URL.rstrip('/')}/{VLLM_INFERENCE_ENDPOINT.lstrip('/')}"
 
     headers = {"Content-Type": "application/json"}
@@ -182,12 +205,36 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
             response = await client.post(url, headers=headers, json=body)
             response.raise_for_status()
             data = response.json()
-    except httpx.TimeoutException as exc:
-        raise HTTPException(status_code=504, detail="vLLM timeout") from exc
-    except httpx.HTTPStatusError as exc:
-        raise HTTPException(status_code=502, detail=f"vLLM returned HTTP {exc.response.status_code}") from exc
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail="vLLM unavailable") from exc
 
-    triage = parse_json_triage(extract_output(data))
-    return GenerateResponse(request_id=request_id, model=VLLM_MODEL, triage=triage)
+        triage = parse_json_triage(extract_output(data))
+        return GenerateResponse(request_id=request_id, model=VLLM_MODEL, triage=triage)
+    except httpx.TimeoutException as exc:
+        status_code = 504
+        error_message = "vLLM timeout"
+        raise HTTPException(status_code=504, detail=error_message) from exc
+    except httpx.HTTPStatusError as exc:
+        status_code = 502
+        error_message = f"vLLM returned HTTP {exc.response.status_code}"
+        raise HTTPException(status_code=502, detail=error_message) from exc
+    except httpx.HTTPError as exc:
+        status_code = 502
+        error_message = "vLLM unavailable"
+        raise HTTPException(status_code=502, detail=error_message) from exc
+    finally:
+        latency_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        trace_record = {
+            "timestamp": now_utc_iso(),
+            "request_id": request_id,
+            "endpoint": "/v1/generate",
+            "status_code": status_code,
+            "latency_ms": latency_ms,
+            "model": VLLM_MODEL,
+            "prompt_chars": len(payload.prompt),
+            "prompt_sha256": hashlib.sha256(payload.prompt.encode("utf-8")).hexdigest(),
+            "max_tokens": payload.max_tokens,
+            "temperature": payload.temperature,
+            "niveau_urgence": triage.niveau_urgence if triage else None,
+            "garde_fou_active": triage.garde_fou_active if triage else None,
+            "error": error_message,
+        }
+        write_trace(trace_record)
