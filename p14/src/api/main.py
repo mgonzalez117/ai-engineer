@@ -1,9 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
+import json
 import os
+import re
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -19,6 +21,35 @@ SYSTEM_PROMPT_FILE = Path(
     os.getenv("SYSTEM_PROMPT_FILE", str(Path(__file__).with_name("system_prompt.txt")))
 )
 
+ALLOWED_URGENCY = {"immediat", "tres urgent", "urgent", "differable"}
+UNSAFE_PATTERNS = [
+    "http://",
+    "https://",
+    "www.",
+    "prescription",
+    "dosage",
+    "medicament",
+]
+
+
+class GenerateRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=8000)
+    max_tokens: int = Field(default=180, ge=1, le=2048)
+    temperature: float = Field(default=0.3, ge=0.0, le=2.0)
+
+
+class TriageOutput(BaseModel):
+    niveau_urgence: Literal["immediat", "tres urgent", "urgent", "differable"]
+    orientation: str
+    justification: str
+    garde_fou_active: bool = False
+
+
+class GenerateResponse(BaseModel):
+    request_id: str
+    model: str
+    triage: TriageOutput
+
 
 def load_system_prompt() -> str:
     if SYSTEM_PROMPT_FILE.exists():
@@ -26,7 +57,11 @@ def load_system_prompt() -> str:
         if content:
             return content
 
-    return "You are a medical triage assistant for emergency department prioritization."
+    return (
+        "Tu es un agent de triage des urgences. "
+        "Tu reponds uniquement en JSON strict avec les cles: "
+        "niveau_urgence, orientation, justification, garde_fou_active."
+    )
 
 
 TRIAGE_SYSTEM_PROMPT = load_system_prompt()
@@ -38,23 +73,17 @@ app = FastAPI(
 )
 
 
-class GenerateRequest(BaseModel):
-    prompt: str = Field(..., min_length=1, max_length=8000)
-    max_tokens: int = Field(default=256, ge=1, le=2048)
-    temperature: float = Field(default=0.2, ge=0.0, le=2.0)
-
-
-class GenerateResponse(BaseModel):
-    request_id: str
-    model: str
-    output: str
-
-
 def build_model_prompt(user_prompt: str) -> str:
     return (
         f"{TRIAGE_SYSTEM_PROMPT}\n\n"
-        f"Données patient:\n{user_prompt.strip()}\n\n"
-        "Réponse de triage:"
+        f"Donnees patient:\n{user_prompt.strip()}\n\n"
+        "Reponds UNIQUEMENT en JSON strict sur une seule ligne.\n"
+        "Format exact:\n"
+        '{"niveau_urgence":"immediat|tres urgent|urgent|differable",'
+        '"orientation":"...",'
+        '"justification":"...",'
+        '"garde_fou_active":false}\n'
+        "Ne mets aucun texte avant ou apres le JSON."
     )
 
 
@@ -64,7 +93,6 @@ def extract_output(vllm_json: dict[str, Any]) -> str:
         return ""
 
     first = choices[0] or {}
-
     text = first.get("text")
     if isinstance(text, str):
         return text.strip()
@@ -75,6 +103,54 @@ def extract_output(vllm_json: dict[str, Any]) -> str:
         return content.strip()
 
     return ""
+
+
+def fallback_triage(reason: str) -> TriageOutput:
+    return TriageOutput(
+        niveau_urgence="tres urgent",
+        orientation="evaluation medicale immediate au service des urgences",
+        justification=f"Reponse de securite: {reason}. Validation clinicien requise.",
+        garde_fou_active=True,
+    )
+
+
+def parse_json_triage(raw_output: str) -> TriageOutput:
+    text = (raw_output or "").strip()
+    if not text:
+        return fallback_triage("sortie vide")
+
+    match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+    if not match:
+        return fallback_triage("json absent")
+
+    json_text = match.group(0)
+    try:
+        data = json.loads(json_text)
+    except json.JSONDecodeError:
+        return fallback_triage("json invalide")
+
+    if not isinstance(data, dict):
+        return fallback_triage("format non objet")
+
+    urgency = str(data.get("niveau_urgence", "")).strip().lower()
+    orientation = str(data.get("orientation", "")).strip()
+    justification = str(data.get("justification", "")).strip()
+
+    if urgency not in ALLOWED_URGENCY:
+        return fallback_triage("niveau_urgence invalide")
+    if not orientation or not justification:
+        return fallback_triage("champs manquants")
+
+    combined = f"{orientation}\n{justification}".lower()
+    if any(pattern in combined for pattern in UNSAFE_PATTERNS):
+        return fallback_triage("contenu hors cadre triage")
+
+    return TriageOutput(
+        niveau_urgence=urgency,  # type: ignore[arg-type]
+        orientation=orientation,
+        justification=justification,
+        garde_fou_active=bool(data.get("garde_fou_active", False)),
+    )
 
 
 @app.get("/healthcheck")
@@ -98,7 +174,7 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
         "temperature": payload.temperature,
         "top_p": 0.9,
         "repetition_penalty": 1.15,
-        "stop": ["\n\nDonnées patient:", "<FIN>"],
+        "stop": ["\n\nDonnees patient:", "<FIN>"],
     }
 
     try:
@@ -113,8 +189,5 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="vLLM unavailable") from exc
 
-    return GenerateResponse(
-        request_id=request_id,
-        model=VLLM_MODEL,
-        output=extract_output(data),
-    )
+    triage = parse_json_triage(extract_output(data))
+    return GenerateResponse(request_id=request_id, model=VLLM_MODEL, triage=triage)
