@@ -170,6 +170,41 @@ def normalize_urgency(value: str) -> str:
     return URGENCY_ALIASES.get(cleaned, cleaned)
 
 
+def normalize_key(value: str) -> str:
+    cleaned = unicodedata.normalize("NFKD", value or "")
+    cleaned = cleaned.encode("ascii", "ignore").decode("ascii")
+    cleaned = re.sub(r"[^a-zA-Z0-9]+", " ", cleaned).lower()
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def pick_value(data: dict[str, Any], aliases: list[str]) -> Any:
+    for alias in aliases:
+        if alias in data and data.get(alias) not in (None, ""):
+            return data.get(alias)
+
+    normalized = {normalize_key(str(k)): v for k, v in data.items()}
+    for alias in aliases:
+        value = normalized.get(normalize_key(alias))
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def to_bool(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = normalize_key(value)
+        if normalized in {"true", "vrai", "yes", "oui", "1"}:
+            return True
+        if normalized in {"false", "faux", "no", "non", "0"}:
+            return False
+    return default
+
+
 def coerce_urgency(value: str, context_text: str = "") -> str | None:
     normalized = normalize_urgency(value)
     if normalized in ALLOWED_URGENCY:
@@ -236,24 +271,35 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     if data is None:
         return fallback_triage("json invalide")
 
-    raw_urgency = (
-        data.get("niveau_urgence")
-        or data.get("niveau urgence")
-        or data.get("niveau-urgence")
-        or data.get("niveauUrgence")
-        or data.get("urgence")
+    triage_block = data.get("triage")
+    payload = triage_block if isinstance(triage_block, dict) else data
+
+    raw_urgency = pick_value(
+        payload,
+        [
+            "niveau_urgence",
+            "niveau urgence",
+            "niveau-urgence",
+            "niveauUrgence",
+            "niveau d'urgence",
+            "niveau d urgence",
+            "urgence",
+        ],
     )
     orientation = str(
-        data.get("orientation")
-        or data.get("orientation_patient")
-        or data.get("orientation_patient_urgences")
+        pick_value(
+            payload,
+            [
+                "orientation",
+                "orientation_patient",
+                "orientation patient",
+                "orientation_patient_urgences",
+            ],
+        )
         or ""
     ).strip()
     justification = str(
-        data.get("justification")
-        or data.get("raison")
-        or data.get("motif")
-        or ""
+        pick_value(payload, ["justification", "raison", "motif"]) or ""
     ).strip()
 
     urgency = coerce_urgency(str(raw_urgency or ""), f"{orientation} {justification}")
@@ -271,7 +317,10 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
         niveau_urgence=urgency,  # type: ignore[arg-type]
         orientation=orientation,
         justification=justification,
-        garde_fou_active=bool(data.get("garde_fou_active", False)),
+        garde_fou_active=to_bool(
+            pick_value(payload, ["garde_fou_active", "garde fou active"]),
+            default=False,
+        ),
     )
 
 
