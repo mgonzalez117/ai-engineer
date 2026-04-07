@@ -69,8 +69,14 @@ Le workflow GitHub Actions `test-p14.yml` build et push l'image Docker `p14-api`
 Secrets GitHub requis (Repository -> Settings -> Secrets and variables -> Actions):
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
+- `RUNPOD_API_KEY`
 
-Sans ces secrets, l'etape de build/push de l'image est refusee.
+Variable GitHub requise:
+- `RUNPOD_API_POD_ID`
+
+Le workflow met a jour le pod Runpod API apres push de l'image en appelant:
+- `POST https://rest.runpod.io/v1/pods/{RUNPOD_API_POD_ID}/update`
+avec `imageName=<dockerhub_user>/p14-api:sha-<commit>`.
 
 ### Utiliser un serveur vLLM externe
 Configurer dans `.env`:

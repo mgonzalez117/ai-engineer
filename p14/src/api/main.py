@@ -96,6 +96,9 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
         "prompt": build_model_prompt(payload.prompt),
         "max_tokens": payload.max_tokens,
         "temperature": payload.temperature,
+        "top_p": 0.9,
+        "repetition_penalty": 1.15,
+        "stop": ["\n\nDonnées patient:", "<FIN>"],
     }
 
     try:
