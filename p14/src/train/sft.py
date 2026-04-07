@@ -174,8 +174,8 @@ def main() -> None:
     print("First train row:", dataset["train"][0])
 
     peft_config = LoraConfig(
-        r=32,
-        lora_alpha=64,
+        r=16,
+        lora_alpha=32,
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
