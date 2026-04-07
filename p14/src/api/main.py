@@ -1,5 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
@@ -30,12 +31,14 @@ ALLOWED_URGENCY = {"immediat", "tres urgent", "urgent", "differable"}
 URGENCY_ALIASES = {
     "immediate": "immediat",
     "immediat": "immediat",
+    "urgence immediate": "immediat",
     "urgence maximale": "immediat",
     "urgence vitale": "immediat",
     "critique": "immediat",
     "vital": "immediat",
     "tres urgent": "tres urgent",
     "tres urgente": "tres urgent",
+    "tresurgence": "tres urgent",
     "very urgent": "tres urgent",
     "urgent": "urgent",
     "urgence moderee": "urgent",
@@ -167,6 +170,31 @@ def normalize_urgency(value: str) -> str:
     return URGENCY_ALIASES.get(cleaned, cleaned)
 
 
+def coerce_urgency(value: str, context_text: str = "") -> str | None:
+    normalized = normalize_urgency(value)
+    if normalized in ALLOWED_URGENCY:
+        return normalized
+
+    context = normalize_urgency(f"{normalized} {context_text}")
+
+    if (
+        "immediat" in context
+        or "urgence vitale" in context
+        or "urgence maximale" in context
+        or "critique" in context
+        or "vital" in context
+    ):
+        return "immediat"
+    if "tres urgent" in context or "tresurgent" in context:
+        return "tres urgent"
+    if "non urgent" in context or "differ" in context:
+        return "differable"
+    if "urgent" in context:
+        return "urgent"
+
+    return None
+
+
 def fallback_triage(reason: str) -> TriageOutput:
     return TriageOutput(
         niveau_urgence="tres urgent",
@@ -181,29 +209,56 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     if not text:
         return fallback_triage("sortie vide")
 
-    match = re.search(r"\{.*\}", text, flags=re.DOTALL)
-    if not match:
+    candidates = re.findall(r"\{[\s\S]*?\}", text)
+    if not candidates and text.startswith("{") and text.endswith("}"):
+        candidates = [text]
+    if not candidates:
         return fallback_triage("json absent")
 
-    json_text = match.group(0)
-    try:
-        data = json.loads(json_text)
-    except json.JSONDecodeError:
-        compact = re.sub(r",\s*}", "}", json_text)
+    data: dict[str, Any] | None = None
+    for candidate in candidates:
+        compact = re.sub(r",\s*}", "}", candidate)
         compact = re.sub(r",\s*]", "]", compact)
+
         try:
-            data = json.loads(compact)
+            parsed = json.loads(compact)
+            data = parsed if isinstance(parsed, dict) else None
         except json.JSONDecodeError:
-            return fallback_triage("json invalide")
+            try:
+                literal = ast.literal_eval(compact)
+                data = literal if isinstance(literal, dict) else None
+            except Exception:
+                data = None
 
-    if not isinstance(data, dict):
-        return fallback_triage("format non objet")
+        if isinstance(data, dict):
+            break
 
-    urgency = normalize_urgency(str(data.get("niveau_urgence", "")))
-    orientation = str(data.get("orientation", "")).strip()
-    justification = str(data.get("justification", "")).strip()
+    if data is None:
+        return fallback_triage("json invalide")
 
-    if urgency not in ALLOWED_URGENCY:
+    raw_urgency = (
+        data.get("niveau_urgence")
+        or data.get("niveau urgence")
+        or data.get("niveau-urgence")
+        or data.get("niveauUrgence")
+        or data.get("urgence")
+    )
+    orientation = str(
+        data.get("orientation")
+        or data.get("orientation_patient")
+        or data.get("orientation_patient_urgences")
+        or ""
+    ).strip()
+    justification = str(
+        data.get("justification")
+        or data.get("raison")
+        or data.get("motif")
+        or ""
+    ).strip()
+
+    urgency = coerce_urgency(str(raw_urgency or ""), f"{orientation} {justification}")
+
+    if urgency is None:
         return fallback_triage("niveau_urgence invalide")
     if not orientation or not justification:
         return fallback_triage("champs manquants")
