@@ -77,8 +77,8 @@ TRIAGE_JSON_SCHEMA = {
 
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=8000)
-    max_tokens: int = Field(default=180, ge=1, le=2048)
-    temperature: float = Field(default=0.3, ge=0.0, le=2.0)
+    max_tokens: int = Field(default=256, ge=1, le=2048)
+    temperature: float = Field(default=0.1, ge=0.0, le=2.0)
 
 
 class TriageOutput(BaseModel):
@@ -239,6 +239,50 @@ def fallback_triage(reason: str) -> TriageOutput:
     )
 
 
+def parse_plaintext_triage(text: str) -> TriageOutput | None:
+    cleaned = (text or "").strip()
+    if not cleaned:
+        return None
+
+    urgency = coerce_urgency("", cleaned) or "tres urgent"
+
+    orientation_match = re.search(
+        r"orientation\s*[:\-]\s*(.+)",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    justification_match = re.search(
+        r"(?:justification|motif|raison)\s*[:\-]\s*(.+)",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+
+    orientation = (
+        orientation_match.group(1).strip()
+        if orientation_match
+        else "evaluation medicale par equipe d'urgences"
+    )
+    justification = (
+        justification_match.group(1).strip()
+        if justification_match
+        else cleaned.splitlines()[0][:220]
+    )
+
+    if not orientation or not justification:
+        return None
+
+    combined = f"{orientation}\n{justification}".lower()
+    if any(pattern in combined for pattern in UNSAFE_PATTERNS):
+        return None
+
+    return TriageOutput(
+        niveau_urgence=urgency,  # type: ignore[arg-type]
+        orientation=orientation,
+        justification=justification,
+        garde_fou_active=False,
+    )
+
+
 def parse_json_triage(raw_output: str) -> TriageOutput:
     text = (raw_output or "").strip()
     if not text:
@@ -248,6 +292,9 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     if not candidates and text.startswith("{") and text.endswith("}"):
         candidates = [text]
     if not candidates:
+        plaintext_triage = parse_plaintext_triage(text)
+        if plaintext_triage is not None:
+            return plaintext_triage
         return fallback_triage("json absent")
 
     data: dict[str, Any] | None = None
@@ -269,6 +316,9 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
             break
 
     if data is None:
+        plaintext_triage = parse_plaintext_triage(text)
+        if plaintext_triage is not None:
+            return plaintext_triage
         return fallback_triage("json invalide")
 
     triage_block = data.get("triage")
@@ -396,3 +446,5 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
             "error": error_message,
         }
         write_trace(trace_record)
+
+
