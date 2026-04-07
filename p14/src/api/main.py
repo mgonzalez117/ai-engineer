@@ -92,6 +92,8 @@ class GenerateResponse(BaseModel):
     request_id: str
     model: str
     triage: TriageOutput
+    parse_status: str
+    llm_raw_output: str
 
 
 def load_system_prompt() -> str:
@@ -283,10 +285,10 @@ def parse_plaintext_triage(text: str) -> TriageOutput | None:
     )
 
 
-def parse_json_triage(raw_output: str) -> TriageOutput:
+def parse_json_triage(raw_output: str) -> tuple[TriageOutput, str]:
     text = (raw_output or "").strip()
     if not text:
-        return fallback_triage("sortie vide")
+        return fallback_triage("sortie vide"), "empty_output"
 
     candidates = re.findall(r"\{[\s\S]*?\}", text)
     if not candidates and text.startswith("{") and text.endswith("}"):
@@ -294,8 +296,8 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     if not candidates:
         plaintext_triage = parse_plaintext_triage(text)
         if plaintext_triage is not None:
-            return plaintext_triage
-        return fallback_triage("json absent")
+            return plaintext_triage, "plaintext_recovered_no_json"
+        return fallback_triage("json absent"), "json_absent"
 
     data: dict[str, Any] | None = None
     for candidate in candidates:
@@ -318,8 +320,8 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     if data is None:
         plaintext_triage = parse_plaintext_triage(text)
         if plaintext_triage is not None:
-            return plaintext_triage
-        return fallback_triage("json invalide")
+            return plaintext_triage, "plaintext_recovered_json_invalide"
+        return fallback_triage("json invalide"), "json_invalid"
 
     triage_block = data.get("triage")
     payload = triage_block if isinstance(triage_block, dict) else data
@@ -355,13 +357,13 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     urgency = coerce_urgency(str(raw_urgency or ""), f"{orientation} {justification}")
 
     if urgency is None:
-        return fallback_triage("niveau_urgence invalide")
+        return fallback_triage("niveau_urgence invalide"), "invalid_urgency"
     if not orientation or not justification:
-        return fallback_triage("champs manquants")
+        return fallback_triage("champs manquants"), "missing_fields"
 
     combined = f"{orientation}\n{justification}".lower()
     if any(pattern in combined for pattern in UNSAFE_PATTERNS):
-        return fallback_triage("contenu hors cadre triage")
+        return fallback_triage("contenu hors cadre triage"), "unsafe_content"
 
     return TriageOutput(
         niveau_urgence=urgency,  # type: ignore[arg-type]
@@ -371,7 +373,7 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
             pick_value(payload, ["garde_fou_active", "garde fou active"]),
             default=False,
         ),
-    )
+    ), "ok_json"
 
 
 @app.get("/healthcheck")
@@ -385,6 +387,8 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
     started_at = time.perf_counter()
     status_code = 200
     error_message = ""
+    parse_status = ""
+    llm_raw_output = ""
     triage: TriageOutput | None = None
 
     url = f"{VLLM_BASE_URL.rstrip('/')}/{VLLM_INFERENCE_ENDPOINT.lstrip('/')}"
@@ -414,8 +418,16 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
             response.raise_for_status()
             data = response.json()
 
-        triage = parse_json_triage(extract_output(data))
-        return GenerateResponse(request_id=request_id, model=VLLM_MODEL, triage=triage)
+        llm_raw_output = extract_output(data)
+        triage, parse_status_raw = parse_json_triage(llm_raw_output)
+        parse_status = "ok" if parse_status_raw == "ok_json" else "fallback"
+        return GenerateResponse(
+            request_id=request_id,
+            model=VLLM_MODEL,
+            triage=triage,
+            parse_status=parse_status,
+            llm_raw_output=llm_raw_output,
+        )
     except httpx.TimeoutException as exc:
         status_code = 504
         error_message = "vLLM timeout"
@@ -443,8 +455,12 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
             "temperature": payload.temperature,
             "niveau_urgence": triage.niveau_urgence if triage else None,
             "garde_fou_active": triage.garde_fou_active if triage else None,
+            "parse_status": parse_status,
+            "llm_raw_output_chars": len(llm_raw_output),
             "error": error_message,
         }
         write_trace(trace_record)
+
+
 
 
