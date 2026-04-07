@@ -1,19 +1,5 @@
 name: ai-engineer-p14
 services:
-  p14-api:
-    container_name: p14-api
-    build: .
-    volumes:
-      - ./:/app
-    ports:
-      - "8000:8000"
-    environment:
-      - PYTHONPATH=/app/src
-      - DATA_DIR=.data
-    command: poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
-    networks:
-      - p14_network
-
   p14-train:
     build:
       context: .
