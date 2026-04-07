@@ -17,6 +17,75 @@ make install
 
 Cela va télécharger les datasets si cela n'est pas déjà fait, dans le dossier suivant : `./data/dataset/raw`.
 
+## API d'inference (FastAPI + vLLM)
+
+### Architecture
+- `p14-api` expose les endpoints HTTP (`/healthcheck`, `/v1/generate`).
+- `p14-vllm` sert le modele avec vLLM (base model + LoRA).
+- Flux: client -> `p14-api` -> `p14-vllm` -> `p14-api` -> client.
+
+### Conteneur `p14-vllm`
+- Image: `vllm/vllm-openai:latest`.
+- Port: `8001` (host) -> `8000` (container).
+- LoRA active via `--enable-lora`.
+- LoRA chargee depuis Hugging Face via:
+  - `HF_TOKEN`
+  - `VLLM_LORA_REPO` (defaut: `MGonzalez117/chsa-finetuning`)
+  - `VLLM_LORA_ALIAS` (defaut: `chsa-lora`)
+
+### Conteneur `p14-api`
+- Build local depuis `Dockerfile`.
+- Port expose: `8000`.
+- Prompt systeme lu depuis `src/api/system_prompt.txt`.
+- Variables de routage inference:
+  - `VLLM_BASE_URL`
+  - `VLLM_INFERENCE_ENDPOINT` (defaut: `/v1/inference`)
+  - `VLLM_MODEL` (defaut recommande: `chsa-lora`)
+  - `VLLM_API_KEY` (optionnel)
+
+### Demarrage local (vLLM + API)
+```bash
+cp .env.dist .env
+# renseigner HF_TOKEN dans .env
+
+docker compose up -d p14-vllm p14-api
+```
+
+### Verification rapide
+```bash
+curl http://localhost:8000/healthcheck
+
+curl -X POST http://localhost:8000/v1/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"Douleur thoracique brutale avec dyspnee.","max_tokens":120}'
+```
+
+### Deploiement CI de l'image `p14-api`
+Le workflow GitHub Actions `test-p14.yml` build et push l'image Docker `p14-api` uniquement si:
+- les tests `p14` passent,
+- le push est sur `main`,
+- des fichiers API/image ont change (`p14/Dockerfile`, `p14/src/api/**`, `p14/pyproject.toml`, `p14/poetry.lock`).
+
+Secrets GitHub requis (Repository -> Settings -> Secrets and variables -> Actions):
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+Sans ces secrets, l'etape de build/push de l'image est refusee.
+
+### Utiliser un serveur vLLM externe
+Configurer dans `.env`:
+- `VLLM_BASE_URL` (ex: URL Runpod)
+- `VLLM_INFERENCE_ENDPOINT`
+- `VLLM_MODEL`
+- `VLLM_API_KEY` si necessaire
+
+Puis lancer uniquement:
+```bash
+docker compose up -d p14-api
+```
+
+
+
 ## Datasets
 
 Nous utilisons les datasets suivants : 

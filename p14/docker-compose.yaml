@@ -1,5 +1,42 @@
 name: ai-engineer-p14
 services:
+  p14-vllm:
+    image: vllm/vllm-openai:latest
+    container_name: p14-vllm
+    ipc: host
+    ports:
+      - "8001:8000"
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+      HF_TOKEN: ${HF_TOKEN:-}
+    command:
+      - --model
+      - ${VLLM_BASE_MODEL:-Qwen/Qwen3-1.7B}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --dtype
+      - auto
+      - --gpu-memory-utilization
+      - "0.90"
+      - --enable-lora
+      - --lora-modules
+      - ${VLLM_LORA_ALIAS:-chsa-lora}=${VLLM_LORA_REPO:-MGonzalez117/chsa-finetuning}
+      - --max-loras
+      - "1"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    networks:
+      - p14_network
+
   p14-api:
     container_name: p14-api
     build: .
@@ -10,6 +47,12 @@ services:
     environment:
       - PYTHONPATH=/app/src
       - DATA_DIR=.data
+      - VLLM_BASE_URL=${VLLM_BASE_URL:-http://p14-vllm:8000}
+      - VLLM_INFERENCE_ENDPOINT=${VLLM_INFERENCE_ENDPOINT:-/v1/completions}
+      - VLLM_MODEL=${VLLM_MODEL:-chsa-lora}
+      - VLLM_API_KEY=${VLLM_API_KEY:-}
+      - REQUEST_TIMEOUT_SECONDS=${REQUEST_TIMEOUT_SECONDS:-60}
+      - SYSTEM_PROMPT_FILE=/app/src/api/system_prompt.txt
     command: poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - p14_network

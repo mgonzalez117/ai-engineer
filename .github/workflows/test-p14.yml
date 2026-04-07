@@ -68,3 +68,65 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: python -m src.export.deploy_lora
+
+  deploy_api_image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect API image changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.before }}
+          ref: ${{ github.sha }}
+          filters: |
+            api_image:
+              - 'p14/Dockerfile'
+              - 'p14/src/api/**'
+              - 'p14/pyproject.toml'
+              - 'p14/poetry.lock'
+
+      - name: Skip image build (no relevant changes)
+        if: steps.changes.outputs.api_image != 'true'
+        run: echo "No API image changes detected. Skipping build and push."
+
+      - name: Validate Docker Hub secrets
+        if: steps.changes.outputs.api_image == 'true'
+        run: |
+          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
+            echo "Missing secret: DOCKERHUB_USERNAME"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "Missing secret: DOCKERHUB_TOKEN"
+            exit 1
+          fi
+
+      - name: Setup Docker Buildx
+        if: steps.changes.outputs.api_image == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        if: steps.changes.outputs.api_image == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push p14-api image
+        if: steps.changes.outputs.api_image == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./p14
+          file: ./p14/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/p14-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/p14-api:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
