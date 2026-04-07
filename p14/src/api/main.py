@@ -5,6 +5,7 @@ import json
 import os
 import re
 import time
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,6 +27,25 @@ SYSTEM_PROMPT_FILE = Path(
 )
 
 ALLOWED_URGENCY = {"immediat", "tres urgent", "urgent", "differable"}
+URGENCY_ALIASES = {
+    "immediate": "immediat",
+    "immediat": "immediat",
+    "urgence maximale": "immediat",
+    "urgence vitale": "immediat",
+    "critique": "immediat",
+    "vital": "immediat",
+    "tres urgent": "tres urgent",
+    "tres urgente": "tres urgent",
+    "very urgent": "tres urgent",
+    "urgent": "urgent",
+    "urgence moderee": "urgent",
+    "moderee": "urgent",
+    "modere": "urgent",
+    "differable": "differable",
+    "differe": "differable",
+    "differee": "differable",
+    "non urgent": "differable",
+}
 UNSAFE_PATTERNS = [
     "http://",
     "https://",
@@ -139,6 +159,14 @@ def extract_output(vllm_json: dict[str, Any]) -> str:
     return ""
 
 
+def normalize_urgency(value: str) -> str:
+    cleaned = unicodedata.normalize("NFKD", value or "")
+    cleaned = cleaned.encode("ascii", "ignore").decode("ascii")
+    cleaned = re.sub(r"[^a-zA-Z ]+", " ", cleaned).lower()
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return URGENCY_ALIASES.get(cleaned, cleaned)
+
+
 def fallback_triage(reason: str) -> TriageOutput:
     return TriageOutput(
         niveau_urgence="tres urgent",
@@ -171,7 +199,7 @@ def parse_json_triage(raw_output: str) -> TriageOutput:
     if not isinstance(data, dict):
         return fallback_triage("format non objet")
 
-    urgency = str(data.get("niveau_urgence", "")).strip().lower()
+    urgency = normalize_urgency(str(data.get("niveau_urgence", "")))
     orientation = str(data.get("orientation", "")).strip()
     justification = str(data.get("justification", "")).strip()
 
