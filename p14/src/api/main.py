@@ -285,44 +285,7 @@ def parse_plaintext_triage(text: str) -> TriageOutput | None:
     )
 
 
-def parse_json_triage(raw_output: str) -> tuple[TriageOutput, str]:
-    text = (raw_output or "").strip()
-    if not text:
-        return fallback_triage("sortie vide"), "empty_output"
-
-    candidates = re.findall(r"\{[\s\S]*?\}", text)
-    if not candidates and text.startswith("{") and text.endswith("}"):
-        candidates = [text]
-    if not candidates:
-        plaintext_triage = parse_plaintext_triage(text)
-        if plaintext_triage is not None:
-            return plaintext_triage, "plaintext_recovered_no_json"
-        return fallback_triage("json absent"), "json_absent"
-
-    data: dict[str, Any] | None = None
-    for candidate in candidates:
-        compact = re.sub(r",\s*}", "}", candidate)
-        compact = re.sub(r",\s*]", "]", compact)
-
-        try:
-            parsed = json.loads(compact)
-            data = parsed if isinstance(parsed, dict) else None
-        except json.JSONDecodeError:
-            try:
-                literal = ast.literal_eval(compact)
-                data = literal if isinstance(literal, dict) else None
-            except Exception:
-                data = None
-
-        if isinstance(data, dict):
-            break
-
-    if data is None:
-        plaintext_triage = parse_plaintext_triage(text)
-        if plaintext_triage is not None:
-            return plaintext_triage, "plaintext_recovered_json_invalide"
-        return fallback_triage("json invalide"), "json_invalid"
-
+def parse_triage_candidate(data: dict[str, Any]) -> tuple[TriageOutput | None, str]:
     triage_block = data.get("triage")
     payload = triage_block if isinstance(triage_block, dict) else data
 
@@ -355,26 +318,78 @@ def parse_json_triage(raw_output: str) -> tuple[TriageOutput, str]:
     ).strip()
 
     urgency = coerce_urgency(str(raw_urgency or ""), f"{orientation} {justification}")
-
     if urgency is None:
-        return fallback_triage("niveau_urgence invalide"), "invalid_urgency"
+        return None, "invalid_urgency"
     if not orientation or not justification:
-        return fallback_triage("champs manquants"), "missing_fields"
+        return None, "missing_fields"
 
     combined = f"{orientation}\n{justification}".lower()
     if any(pattern in combined for pattern in UNSAFE_PATTERNS):
-        return fallback_triage("contenu hors cadre triage"), "unsafe_content"
+        return None, "unsafe_content"
 
-    return TriageOutput(
-        niveau_urgence=urgency,  # type: ignore[arg-type]
-        orientation=orientation,
-        justification=justification,
-        garde_fou_active=to_bool(
-            pick_value(payload, ["garde_fou_active", "garde fou active"]),
-            default=False,
+    return (
+        TriageOutput(
+            niveau_urgence=urgency,  # type: ignore[arg-type]
+            orientation=orientation,
+            justification=justification,
+            garde_fou_active=to_bool(
+                pick_value(payload, ["garde_fou_active", "garde fou active"]),
+                default=False,
+            ),
         ),
-    ), "ok_json"
+        "ok_json",
+    )
 
+
+def parse_json_triage(raw_output: str) -> tuple[TriageOutput, str]:
+    text = (raw_output or "").strip()
+    if not text:
+        return fallback_triage("sortie vide"), "empty_output"
+
+    candidates = re.findall(r"\{[\s\S]*?\}", text)
+    if not candidates and text.startswith("{") and text.endswith("}"):
+        candidates = [text]
+
+    parse_status_raw = "json_absent" if not candidates else "json_invalid"
+    parsed_candidates: list[dict[str, Any]] = []
+
+    for candidate in candidates:
+        compact = re.sub(r",\s*}", "}", candidate)
+        compact = re.sub(r",\s*]", "]", compact)
+
+        data: dict[str, Any] | None = None
+        try:
+            parsed = json.loads(compact)
+            data = parsed if isinstance(parsed, dict) else None
+        except json.JSONDecodeError:
+            try:
+                literal = ast.literal_eval(compact)
+                data = literal if isinstance(literal, dict) else None
+            except Exception:
+                data = None
+
+        if isinstance(data, dict):
+            parsed_candidates.append(data)
+
+    for candidate_data in parsed_candidates:
+        triage, candidate_status = parse_triage_candidate(candidate_data)
+        if triage is not None:
+            return triage, candidate_status
+        parse_status_raw = candidate_status
+
+    plaintext_triage = parse_plaintext_triage(text)
+    if plaintext_triage is not None:
+        return plaintext_triage, "ok_plaintext"
+
+    fallback_reason = {
+        "json_absent": "json absent",
+        "json_invalid": "json invalide",
+        "invalid_urgency": "niveau_urgence invalide",
+        "missing_fields": "champs manquants",
+        "unsafe_content": "contenu hors cadre triage",
+    }.get(parse_status_raw, "json invalide")
+
+    return fallback_triage(fallback_reason), parse_status_raw
 
 @app.get("/healthcheck")
 async def health() -> dict[str, str]:
@@ -388,6 +403,7 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
     status_code = 200
     error_message = ""
     parse_status = ""
+    parse_status_raw = ""
     llm_raw_output = ""
     triage: TriageOutput | None = None
 
@@ -420,7 +436,7 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
 
         llm_raw_output = extract_output(data)
         triage, parse_status_raw = parse_json_triage(llm_raw_output)
-        parse_status = "ok" if parse_status_raw == "ok_json" else "fallback"
+        parse_status = "ok" if parse_status_raw.startswith("ok_") else "fallback"
         return GenerateResponse(
             request_id=request_id,
             model=VLLM_MODEL,
@@ -456,11 +472,8 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
             "niveau_urgence": triage.niveau_urgence if triage else None,
             "garde_fou_active": triage.garde_fou_active if triage else None,
             "parse_status": parse_status,
+            "parse_status_raw": parse_status_raw,
             "llm_raw_output_chars": len(llm_raw_output),
             "error": error_message,
         }
         write_trace(trace_record)
-
-
-
-

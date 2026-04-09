@@ -1,7 +1,7 @@
 name: ai-engineer-p14
 services:
   p14-vllm:
-    image: vllm/vllm-openai:latest
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.8.5}
     container_name: p14-vllm
     ipc: host
     ports:
@@ -9,6 +9,8 @@ services:
     environment:
       HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
       HF_TOKEN: ${HF_TOKEN:-}
+      NVIDIA_DISABLE_REQUIRE: ${NVIDIA_DISABLE_REQUIRE:-1}
+      VLLM_ENABLE_CUDA_COMPATIBILITY: ${VLLM_ENABLE_CUDA_COMPATIBILITY:-1}
     command:
       - --model
       - ${VLLM_BASE_MODEL:-Qwen/Qwen3-1.7B}
@@ -19,7 +21,9 @@ services:
       - --dtype
       - auto
       - --gpu-memory-utilization
-      - "0.90"
+      - "0.95"
+      - --max-model-len
+      - "8192"
       - --enable-lora
       - --lora-modules
       - ${VLLM_LORA_ALIAS:-chsa-lora}=${VLLM_LORA_REPO:-MGonzalez117/chsa-finetuning}
@@ -33,7 +37,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [ gpu ]
+              capabilities: [gpu]
     networks:
       - p14_network
 
@@ -51,7 +55,7 @@ services:
       - VLLM_INFERENCE_ENDPOINT=${VLLM_INFERENCE_ENDPOINT:-/v1/completions}
       - VLLM_MODEL=${VLLM_MODEL:-chsa-lora}
       - VLLM_API_KEY=${VLLM_API_KEY:-}
-      - REQUEST_TIMEOUT_SECONDS=${REQUEST_TIMEOUT_SECONDS:-60}
+      - REQUEST_TIMEOUT_SECONDS=${REQUEST_TIMEOUT_SECONDS:-300}
       - SYSTEM_PROMPT_FILE=/app/src/api/system_prompt.txt
     command: poetry run uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
