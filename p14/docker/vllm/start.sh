@@ -38,7 +38,7 @@ if ! [[ "$MAX_LORAS" =~ ^[0-9]+$ ]] || [[ "$MAX_LORAS" -lt 1 ]]; then
   exit 1
 fi
 
-log "Starting vLLM OpenAI server with"
+log "Starting vLLM OpenAI server with :"
 log "MODEL_NAME=${MODEL_NAME}"
 log "VLLM_API_KEY=$(mask_secret "$VLLM_API_KEY")"
 log "MAX_LORAS=${MAX_LORAS}"

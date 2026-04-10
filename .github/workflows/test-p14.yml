@@ -107,6 +107,19 @@ jobs:
             exit 1
           fi
 
+      - name: Free disk space for API image build
+        if: steps.changes.outputs.api_image == 'true'
+        run: |
+          echo "Disk before cleanup:"
+          df -h
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          docker system prune -af || true
+          echo "Disk after cleanup:"
+          df -h
+
       - name: Setup Docker Buildx
         if: steps.changes.outputs.api_image == 'true'
         uses: docker/setup-buildx-action@v3
@@ -189,6 +202,19 @@ jobs:
             exit 1
           fi
 
+      - name: Free disk space for vLLM image build
+        if: steps.changes.outputs.vllm_image == 'true'
+        run: |
+          echo "Disk before cleanup:"
+          df -h
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          docker system prune -af || true
+          echo "Disk after cleanup:"
+          df -h
+
       - name: Setup Docker Buildx
         if: steps.changes.outputs.vllm_image == 'true'
         uses: docker/setup-buildx-action@v3
@@ -207,8 +233,8 @@ jobs:
           context: ./p14/docker/vllm
           file: ./p14/docker/vllm/Dockerfile
           push: true
+          provenance: false
+          sbom: false
           tags: |
             mgonzalez117/p14-vllm:latest
             mgonzalez117/p14-vllm:sha-${{ github.sha }}
-          cache-from: type=gha,scope=p14-vllm
-          cache-to: type=gha,mode=max,scope=p14-vllm
