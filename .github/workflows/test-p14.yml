@@ -204,11 +204,11 @@ jobs:
         if: steps.changes.outputs.vllm_image == 'true'
         uses: docker/build-push-action@v6
         with:
-          context: ./p14
+          context: ./p14/docker/vllm
           file: ./p14/docker/vllm/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/p14-vllm:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/p14-vllm:sha-${{ github.sha }}
+            mgonzalez117/p14-vllm:latest
+            mgonzalez117/p14-vllm:sha-${{ github.sha }}
           cache-from: type=gha,scope=p14-vllm
           cache-to: type=gha,mode=max,scope=p14-vllm
