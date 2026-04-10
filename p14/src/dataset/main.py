@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 
 from .anonymize import anonymize_dpo_rows, anonymize_sft_rows
@@ -14,6 +15,28 @@ from .normalize import (
 from .validate import summarize_validation, validate_dpo_rows, validate_sft_rows
 
 TARGET_SIZE=5500
+
+def push_processed_dataset(aggregated_at: str) -> None:
+    token = os.getenv("HF_TOKEN", "").strip()
+    if not token:
+        print("HF_TOKEN not set, skipping dataset push.")
+        return
+
+    repo_id = os.getenv("DATASET_REPO_ID", "MGonzalez117/chsa-triage-medical").strip()
+    if not repo_id:
+        repo_id = "MGonzalez117/chsa-triage-medical"
+
+    from src.export.push_dataset import push_dataset
+
+    print(f"Pushing processed dataset to HF repo: {repo_id} (revision=dev)")
+    push_dataset(
+        repo_id=repo_id,
+        local_dir=PROCESSED_DIR,
+        revision="dev",
+        path_in_repo="processed",
+        token=token,
+        commit_message=f"Update processed dataset from dataset.main - {aggregated_at}",
+    )
 
 def split_dataset(rows: list[dict], seed: int = 42) -> dict[str, list[dict]]:
     shuffled = rows[:]
@@ -295,6 +318,9 @@ def main() -> None:
     )
     print(f"Fichiers écrits dans: {PROCESSED_DIR}")
 
+
+    # 14) Push remote du dataset processed (si HF_TOKEN est present).
+    push_processed_dataset(aggregated_at)
 
 if __name__ == "__main__":
     main()

@@ -107,8 +107,6 @@ Puis lancer uniquement:
 docker compose up -d p14-api
 ```
 
-
-
 ## Datasets
 
 Nous utilisons les datasets suivants : 
@@ -232,7 +230,15 @@ python -m src.train.sft
 python -m src.train.dpo
 ```
 
-Optionnel: demarrer DPO depuis un run SFT W&B (au lieu du local):
+Push automatique du dataset processed vers Hugging Face:
+
+Une fois le dataset aggregé, il est automatiquement poussé vers HuggingFace, sur la branche `dev` :
+
+```bash
+HF_TOKEN=<hf_token> DATASET_REPO_ID=MGonzalez117/chsa-triage-medical python -m src.export.push_dataset
+```
+
+Optionnel: démarrer DPO depuis un run SFT W&B (au lieu du local):
 
 ```bash
 SFT_WANDB_RUN_PATH=<entity>/<project>/<run_id> python -m src.train.dpo
