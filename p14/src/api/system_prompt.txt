@@ -7,9 +7,8 @@ FORMAT OBLIGATOIRE:
 {"niveau_urgence":"immediat|tres urgent|urgent|differable","orientation":"...","justification":"...", "manque_infos": "..."}
 
 CONTRAINTES:
-- Cles exactes et uniquement ces 3 cles: niveau_urgence, orientation, justification.
+- Cles exactes et uniquement ces 4 cles: niveau_urgence, orientation, justification, manque_infos.
 - "niveau_urgence" doit etre EXACTEMENT une des 4 valeurs autorisees.
-- "garde_fou_active" doit etre false.
 - "orientation" et "justification" doivent etre courtes (1 phrase chacune).
 - Pas de markdown, pas de liste, pas de code block.
 - Interdit: URL, lien web, prescription, dosage, medicament, diagnostic definitif.

@@ -68,9 +68,9 @@ TRIAGE_JSON_SCHEMA = {
         },
         "orientation": {"type": "string"},
         "justification": {"type": "string"},
-        "garde_fou_active": {"type": "boolean"},
+        "manque_infos": {"type": "string"},
     },
-    "required": ["niveau_urgence", "orientation", "justification", "garde_fou_active"],
+    "required": ["niveau_urgence", "orientation", "justification"],
     "additionalProperties": False,
 }
 
@@ -85,7 +85,7 @@ class TriageOutput(BaseModel):
     niveau_urgence: Literal["immediat", "tres urgent", "urgent", "differable"]
     orientation: str
     justification: str
-    garde_fou_active: bool = False
+    manque_infos: str | None = None
 
 
 class GenerateResponse(BaseModel):
@@ -105,7 +105,7 @@ def load_system_prompt() -> str:
     return (
         "Tu es un agent de triage des urgences. "
         "Tu reponds uniquement en JSON strict avec les cles: "
-        "niveau_urgence, orientation, justification, garde_fou_active."
+        "niveau_urgence, orientation, justification, manque_infos (optionnelle)."
     )
 
 
@@ -141,7 +141,8 @@ def build_model_prompt(user_prompt: str) -> str:
         '{"niveau_urgence":"immediat|tres urgent|urgent|differable",'
         '"orientation":"...",'
         '"justification":"...",'
-        '"garde_fou_active":false}\n'
+        '"manque_infos":"..."}\n'
+        "Le champ manque_infos est optionnel.\n"
         "Ne mets aucun texte avant ou apres le JSON."
     )
 
@@ -237,7 +238,6 @@ def fallback_triage(reason: str) -> TriageOutput:
         niveau_urgence="tres urgent",
         orientation="evaluation medicale immediate au service des urgences",
         justification=f"Reponse de securite: {reason}. Validation clinicien requise.",
-        garde_fou_active=True,
     )
 
 
@@ -258,6 +258,11 @@ def parse_plaintext_triage(text: str) -> TriageOutput | None:
         cleaned,
         flags=re.IGNORECASE,
     )
+    manque_infos_match = re.search(
+        r"(?:manque_infos|manque infos|infos? manquantes?)\s*[:\-]\s*(.+)",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
 
     orientation = (
         orientation_match.group(1).strip()
@@ -270,10 +275,14 @@ def parse_plaintext_triage(text: str) -> TriageOutput | None:
         else cleaned.splitlines()[0][:220]
     )
 
+    manque_infos = manque_infos_match.group(1).strip() if manque_infos_match else None
+    if manque_infos == "":
+        manque_infos = None
+
     if not orientation or not justification:
         return None
 
-    combined = f"{orientation}\n{justification}".lower()
+    combined = f"{orientation}\n{justification}\n{manque_infos or ''}".lower()
     if any(pattern in combined for pattern in UNSAFE_PATTERNS):
         return None
 
@@ -281,7 +290,7 @@ def parse_plaintext_triage(text: str) -> TriageOutput | None:
         niveau_urgence=urgency,  # type: ignore[arg-type]
         orientation=orientation,
         justification=justification,
-        garde_fou_active=False,
+        manque_infos=manque_infos,
     )
 
 
@@ -316,6 +325,18 @@ def parse_triage_candidate(data: dict[str, Any]) -> tuple[TriageOutput | None, s
     justification = str(
         pick_value(payload, ["justification", "raison", "motif"]) or ""
     ).strip()
+    raw_manque_infos = pick_value(
+        payload,
+        [
+            "manque_infos",
+            "manque infos",
+            "manqueInfos",
+            "informations_manquantes",
+            "infos_manquantes",
+            "infos manquantes",
+        ],
+    )
+    manque_infos = str(raw_manque_infos).strip() if raw_manque_infos is not None else ""
 
     urgency = coerce_urgency(str(raw_urgency or ""), f"{orientation} {justification}")
     if urgency is None:
@@ -323,7 +344,7 @@ def parse_triage_candidate(data: dict[str, Any]) -> tuple[TriageOutput | None, s
     if not orientation or not justification:
         return None, "missing_fields"
 
-    combined = f"{orientation}\n{justification}".lower()
+    combined = f"{orientation}\n{justification}\n{manque_infos}".lower()
     if any(pattern in combined for pattern in UNSAFE_PATTERNS):
         return None, "unsafe_content"
 
@@ -332,10 +353,7 @@ def parse_triage_candidate(data: dict[str, Any]) -> tuple[TriageOutput | None, s
             niveau_urgence=urgency,  # type: ignore[arg-type]
             orientation=orientation,
             justification=justification,
-            garde_fou_active=to_bool(
-                pick_value(payload, ["garde_fou_active", "garde fou active"]),
-                default=False,
-            ),
+            manque_infos=manque_infos or None,
         ),
         "ok_json",
     )
@@ -470,7 +488,6 @@ async def generate(payload: GenerateRequest) -> GenerateResponse:
             "max_tokens": payload.max_tokens,
             "temperature": payload.temperature,
             "niveau_urgence": triage.niveau_urgence if triage else None,
-            "garde_fou_active": triage.garde_fou_active if triage else None,
             "parse_status": parse_status,
             "parse_status_raw": parse_status_raw,
             "llm_raw_output_chars": len(llm_raw_output),
