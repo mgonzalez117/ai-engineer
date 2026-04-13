@@ -254,12 +254,12 @@ Notes:
 
 ## Evaluation clinique
 
-Le jeu `clinical_eval.jsonl` est un holdout separe (pas utilise pour l'entrainement).
+Le jeu `clinical_eval.jsonl` est un holdout séparé (pas utilisé pour l'entrainement).
 
-- `python -m src.train.sft` lance une evaluation clinique en fin de run.
-- `python -m src.train.dpo` lance aussi une evaluation clinique en fin de run.
-- Les metriques sont logguees dans W&B avec le prefixe `clinical_eval/`.
-- Les resultats sont aussi ecrits dans `artifacts/sft/eval_report.json` et `artifacts/dpo/eval_report.json`.
+- `python -m src.train.sft` lance une évaluation clinique en fin de run.
+- `python -m src.train.dpo` lance aussi une évaluation clinique en fin de run.
+- Les métriques sont logguées dans W&B avec le préfixe `clinical_eval/`.
+- Les résultats sont aussi écrits dans `artifacts/sft/eval_report.json` et `artifacts/dpo/eval_report.json`.
 
 Variables utiles (optionnelles):
 - `CLINICAL_EVAL_ENABLED` (defaut: `1`)
