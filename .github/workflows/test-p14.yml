@@ -4,12 +4,12 @@ on:
   push:
     branches: [ main, develop ]
     paths:
-      - "p14/**"
+      - "14-finetunez-votre-LLM/**"
       - ".github/workflows/test-p14.yml"
   pull_request:
     branches: [ main, develop ]
     paths:
-      - "p14/**"
+      - "14-finetunez-votre-LLM/**"
       - ".github/workflows/test-p14.yml"
   workflow_dispatch:
 
@@ -86,10 +86,10 @@ jobs:
           ref: ${{ github.sha }}
           filters: |
             api_image:
-              - 'p14/Dockerfile'
-              - 'p14/src/api/**'
-              - 'p14/pyproject.toml'
-              - 'p14/poetry.lock'
+              - '14-finetunez-votre-LLM/Dockerfile'
+              - '14-finetunez-votre-LLM/src/api/**'
+              - '14-finetunez-votre-LLM/pyproject.toml'
+              - '14-finetunez-votre-LLM/poetry.lock'
 
       - name: Skip image build (no relevant changes)
         if: steps.changes.outputs.api_image != 'true'
@@ -136,7 +136,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./p14
-          file: ./p14/Dockerfile
+          file: ./14-finetunez-votre-LLM/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/p14-api:latest
@@ -187,8 +187,8 @@ jobs:
           ref: ${{ github.sha }}
           filters: |
             vllm_image:
-              - 'p14/docker/vllm/Dockerfile'
-              - 'p14/docker/vllm/start.sh'
+              - '14-finetunez-votre-LLM/docker/vllm/Dockerfile'
+              - '14-finetunez-votre-LLM/docker/vllm/start.sh'
 
       - name: Skip vLLM image build (no relevant changes)
         if: steps.changes.outputs.vllm_image != 'true'
@@ -230,8 +230,8 @@ jobs:
         if: steps.changes.outputs.vllm_image == 'true'
         uses: docker/build-push-action@v6
         with:
-          context: ./p14/docker/vllm
-          file: ./p14/docker/vllm/Dockerfile
+          context: ./14-finetunez-votre-LLM/docker/vllm
+          file: ./14-finetunez-votre-LLM/docker/vllm/Dockerfile
           push: true
           provenance: false
           sbom: false

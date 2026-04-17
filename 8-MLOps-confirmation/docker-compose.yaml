@@ -1,0 +1,100 @@
+name: ai-engineer-p8
+services:
+  api:
+    container_name: p8-api
+    build: .
+    volumes:
+      - ./src:/app/src
+      - ./.data:/app/.data
+      - ./models:/app/models
+      - ./poetry.lock:/app/poetry.lock
+      - ./pyproject.toml:/app/pyproject.toml
+    ports:
+      - '${API_PORT}:7860'
+    environment:
+      API_URL: 'http://p8-api:7860'
+      API_TOKEN: ${API_TOKEN}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      #DATABASE_URL: "sqlite:///db.sqlite" # uncomment to test DB for Hugging face & gitlab ci
+      HF_REPOSITORY: ${HF_REPOSITORY}
+      HF_MODEL: ${HF_MODEL}
+      HF_PIPELINE: ${HF_PIPELINE}
+    stdin_open: true
+    tty: true
+    networks:
+      - ai-engineer-p8
+
+  dashboard:
+    image: grafana/grafana-enterprise
+    container_name: p8-dashboard
+    restart: unless-stopped
+    volumes:
+      - 'grafana_storage:/var/lib/grafana'
+    ports:
+      - '${DASHBOARD_PORT}:3000'
+    networks:
+      - ai-engineer-p8
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: p8-datastore
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ai-engineer-p8
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB'" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: p8-datadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "${PGADMIN_PORT}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - ai-engineer-p8
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  snakeviz:
+    image: python:3.13-slim
+    container_name: p8-snakeviz
+    working_dir: /app
+    volumes:
+      - ./.data/profiling:/app/profiling
+    ports:
+      - "${SNAKEVIZ_PORT}:8080"
+    command: >
+      sh -c "pip install --no-cache-dir snakeviz &&
+             python -m snakeviz /app/profiling/predict_inference.prof --server --host 0.0.0.0 --port 8080"
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  grafana_storage: { }
+
+networks:
+  ai-engineer-p8:
+    name: ai-engineer-p8
+    driver: bridge

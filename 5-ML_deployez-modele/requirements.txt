@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+psycopg2-binary
+sqlalchemy
+pandas
+pytest
+pytest-cov
+httpx
+requests
+joblib
+scikit-learn
+xgboost
+huggingface_hub

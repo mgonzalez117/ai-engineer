@@ -1,0 +1,103 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  IMAGE_NAME: "$CI_REGISTRY_IMAGE/src"
+  API_PORT: 7860
+  API_TOKEN: "testToken"
+  POSTGRES_DB: testdb
+  POSTGRES_USER: testuser
+  POSTGRES_PASSWORD: testpass
+  WAIT_FOR_SERVICES_TIMEOUT: "120"
+
+build_api_image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker build -t $IMAGE_NAME:latest -f ./Dockerfile .
+    - docker push $IMAGE_NAME:latest
+  only:
+    - main
+    - develop
+    - /^release\/.*$/
+    - /^feature\/.*$/
+
+test_api:
+  stage: test
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  image: python:3.13-slim
+  services:
+    - docker:dind
+    - name: postgres:16
+      alias: postgres
+      variables:
+        POSTGRES_DB: testdb
+        POSTGRES_USER: testuser
+        POSTGRES_PASSWORD: testpass
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_TLS_CERTDIR: ""
+    API_PORT: "7860"
+    DATABASE_URL: "postgresql://testuser:testpass@postgres:5432/testdb"
+  before_script:
+    - apt-get update && apt-get install -y docker.io curl postgresql-client
+  script:
+    - until PGPASSWORD="testpass" psql -h postgres -U "testuser" -d "testdb" -c "SELECT 1;" >/dev/null 2>&1; do echo "Waiting for Postgres..."; sleep 2; done
+    - POSTGRES_IP=$(getent ahostsv4 postgres | grep STREAM | head -n1 | awk '{ print $1 }')
+    - echo "Postgres IPv4:$POSTGRES_IP"
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker pull "$IMAGE_NAME:latest"
+    - docker run -d --name api -e API_URL="http://localhost:${API_PORT}" -e API_TOKEN=${API_TOKEN} -e API_PORT=${API_PORT} -e HF_MODEL="${HF_MODEL}" -e HF_REPOSITORY="${HF_REPOSITORY}" -e DATABASE_URL="postgresql://testuser:testpass@${POSTGRES_IP}:5432/testdb" -p 7860:7860 "$IMAGE_NAME:latest"
+    - echo "Waiting for API to start..."
+    - sleep 5
+    - docker ps -a
+    - docker logs api
+    - echo "Testing API connectivity..."
+    - docker exec api curl -sSf "http://localhost:${API_PORT}/status" || echo "API not ready inside container"
+    - timeout 60 sh -c 'until curl -sSf "http://docker:${API_PORT}/status" 2>/dev/null; do echo "Waiting for API..."; sleep 3; done' || (docker logs --tail=500 api && exit 1)
+    - pip install -U pip poetry
+    - poetry install --no-root
+    - API_URL="http://docker:${API_PORT}" API_TOKEN=${API_TOKEN} poetry run pytest ./tests/ -v --cov=./src/api --cov-branch --cov-report=term-missing:skip-covered --cov-report=xml:coverage.xml --cov-report=html
+  artifacts:
+    when: always
+    paths:
+      - coverage.xml
+      - htmlcov/
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  only:
+    - main
+    - develop
+    - /^release\/.*$/
+    - /^feature\/.*$/
+
+deploy_to_hf:
+  stage: deploy
+  image: python:3.13
+  script:
+    - apt-get update && apt-get install -y git rsync
+    - pip install huggingface_hub
+    - git config --global user.email "ci-bot@example.com"
+    - git config --global user.name "CI Bot"
+    - git clone "$HF_SPACE_REPOSITORY"
+    - cd ai-engineer-p8
+    - rm -rf *
+    - rsync -av --exclude='.git' --exclude='ai-engineer-p8' ../ .
+    - git add .
+    - git commit -m "CI deploy $(date)" || echo "No changes to commit"
+    - git remote set-url origin "https://hf:${HF_SPACE_TOKEN}@${HF_SPACE_REPOSITORY#https://}"
+    - git push origin main
+  only:
+    - main
+  needs:
+    - test_api

@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "ai-engineer_p8"
+version = "0.1.0"
+description = "AI Engineer - Confirmez vos compétences en MLOps (2/2)"
+authors = ["Michaël Gonzalez <cyberalternative@gmail.com>"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.119.1"
+uvicorn = "^0.38.0"
+pytest = "^8.4.2"
+pydantic = "^2.12.3"
+scikit-learn = "^1.7.2"
+pandas = "^2.3.3"
+numpy = "^2.3.4"
+xgboost = "^3.1.1"
+imblearn = "^0.0"
+joblib = "^1.5.2"
+sqlalchemy = "^2.0.44"
+huggingface-hub = "^1.1.4"
+psycopg2-binary = "^2.9.11"
+pytest-cov = "^7.0.0"
+requests = "^2.32.5"
+evidently = "^0.7.16"
+

@@ -1,0 +1,11 @@
+/models/
+/tests/
+.gitlab-ci.yml
+docker-compose.yaml
+Dockerfile
+LICENSE
+Makefile
+README.md
+.gitignore
+.env.dist
+.env
