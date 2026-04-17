@@ -3,10 +3,10 @@ name: Run Tests (p7)
 on:
   push:
     branches: [ main, develop ]
-    paths: [ "7-RAG_conception-deploiement/**", ".github/workflows/test-p7.yml" ]
+    paths: [ "07-RAG_conception-deploiement/**", ".github/workflows/test-p7.yml" ]
   pull_request:
     branches: [ main, develop ]
-    paths: [ "7-RAG_conception-deploiement/**", ".github/workflows/test-p7.yml" ]
+    paths: [ "07-RAG_conception-deploiement/**", ".github/workflows/test-p7.yml" ]
   workflow_dispatch:
 
 jobs:
