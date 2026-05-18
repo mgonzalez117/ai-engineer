@@ -23,6 +23,9 @@ Elle situe également mes expériences et mon parcours professionnel ainsi que l
 
 La mindmap détaille également mon projet personnel technique **SPARROW**, qui est l'objet de ce projet.
 
+La mindmap navigable et détaillée est disponible via le lien suivant : https://mm.tt/map/3991818334?t=f9cKah1JnR
+
+
 ![](./assets/mindmap.JPG)
 
 ## Projet Sparrow
@@ -139,3 +142,28 @@ Il :
 ### Objectif long terme
 
 À terme, Sparrow pourrait devenir une plateforme distribuée de suivi ornithologique reposant sur un réseau de capteurs autonomes capables d’analyser la biodiversité sonore en continu.
+
+### Installation Détecteur
+
+Le 1er détecteur de la gamme est un Rasperry pi Zero 2WH
+
+* Petite taille
+* Peu consommateur
+* Wifi intégré pour faciliter la connectivité du démonstrateur
+    * On peut imaginer de futures versions avec des protocoles moins consommateurs (Zigbee, ZWave)
+* OS debian raspberry lite permettant d'embarquer facilement la couche applicative de détection audio
+
+Le détecteur est alimenté en 5V depuis un petit transformateur usb 240V-5V.
+
+Le détecteur est précédé d'un commutateur de courant permettant de le mettre hors service et de le redémarrer à distance.
+(solution intégrée en Zigbee à Home assistant pour ce démonstrateur)
+
+<div style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <img src="./assets/detector00.JPG" alt="Détecteur - vue 1" width="250">
+  <img src="./assets/detector01.JPG" alt="Détecteur - vue 2" width="250">
+  <img src="./assets/detector02.JPG" alt="Détecteur - vue 3" width="250">
+</div>
+
+### Dashboard
+
+<img src="./assets/dashboard.JPG" alt="Dashboard Sparrow" width="700">
