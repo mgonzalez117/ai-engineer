@@ -1,5 +1,7 @@
 # Sparrow - Bird detector
 
+<img src="./assets/sparrow.JPG" alt="Dashboard Sparrow" width="700">
+
 ## Introduction
 
 ### Portfolio
@@ -166,4 +168,15 @@ Le détecteur est précédé d'un commutateur de courant permettant de le mettre
 
 ### Dashboard
 
+Voici un aperçu du dashboard (front) principal du démonstrateur
+
 <img src="./assets/dashboard.JPG" alt="Dashboard Sparrow" width="700">
+
+### Notifications discord
+
+Voici un aperçu des notifications discord.
+
+Le fichier audio de détection est lié et permet de réécouter le cas.
+Cela permettra une classification manuelle (labellisation) pour améliorer le modèle **BirdNet** utilisé.
+
+<img src="./assets/discord.JPG" alt="Dashboard Sparrow" width="700">
